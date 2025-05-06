@@ -63,7 +63,8 @@ export async function GET(request: Request) {
       10
     );
 
-    console.log("[API Route] Total Products:", totalProducts);
+    // console.log("[API Route] Total Products:", totalProducts);
+    console.log("[API Route] Products:", data);
 
     // Return the products and totalProducts
     return NextResponse.json(
