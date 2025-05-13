@@ -9,48 +9,32 @@ import SpinnerLarge from "../common/SpinnerLarge";
 interface ProductListProps {
   initialProducts: Product[]; // Server-side rendered initial products
   totalProducts: number; // Total number of products (from SSR)
-  initialPage: number; // Page that was SSR‑rendered
 }
 
-// const ProductList = ({ initialProducts, totalProducts }: ProductListProps) => {
-const ProductList = ({
-  initialProducts,
-  totalProducts,
-  initialPage,
-}: ProductListProps) => {
+const ProductList = ({ initialProducts, totalProducts }: ProductListProps) => {
   const {
     currentPage,
     pageData,
     fetchPage,
     setPageData,
     setTotalProducts,
-    setCurrentPage,
     loading,
   } = useNumberedPaginationStore();
 
   // const { cartItems } = useCartStore();
   // console.log("Cart Items from Zustand [ProductList.tsx]", cartItems);
 
-  // Hydrate store with the server‑rendered page (could be 1, 2, 3…)
+  // Hydrate Zustand store with initial SSR data for page 1
   useEffect(() => {
-    if (!pageData[initialPage]) {
-      setPageData(initialPage, initialProducts); // Cache the SSR page
-      setTotalProducts(totalProducts); // Store total count
-      setCurrentPage(initialPage); // Sync current page
+    if (!pageData[1]) {
+      setPageData(1, initialProducts); // Cache Page 1 data
+      setTotalProducts(totalProducts); // Set total products count
     }
-  }, [
-    initialPage,
-    initialProducts,
-    totalProducts,
-    setCurrentPage,
-    setPageData,
-    setTotalProducts,
-    pageData,
-  ]);
+  }, [initialProducts, totalProducts, setPageData, setTotalProducts, pageData]);
 
   // Fetch products for the current page (if not already cached)
   useEffect(() => {
-    if (!pageData[currentPage]) {
+    if (currentPage !== 1 && !pageData[currentPage]) {
       fetchPage(currentPage);
     }
   }, [currentPage, pageData, fetchPage]);

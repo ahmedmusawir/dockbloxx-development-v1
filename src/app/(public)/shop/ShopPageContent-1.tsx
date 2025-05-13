@@ -3,26 +3,16 @@ import Page from "@/components/common/Page";
 import ProductList from "@/components/shop/ProductList";
 import { fetchInitialProducts } from "@/services/productServices";
 import NumberedPagination from "@/components/common/NumberedPagination";
+import ShopPageReset from "@/components/shop/ShopPageReset";
 import CategoryFilter from "@/components/shop/filters/CategoryFilter";
 import { getAllCategories } from "@/services/categoryServices";
 import Image from "next/image";
 import { getImageUrl } from "@/lib/utils";
 
-interface ShopPageContentProps {
-  searchParams?: { page?: string };
-}
-
-const ShopPageContent = async ({ searchParams }: ShopPageContentProps) => {
+const ShopPageContent = async () => {
   const productsPerPage = 12;
-
-  // Read ?page= from the URL (defaults to 1)
-  const pageFromQuery = Number(searchParams?.page ?? "1");
-
-  // Fetch the requested page on the server (ISR‑cached)
-  const { products, totalProducts } = await fetchInitialProducts(
-    pageFromQuery,
-    productsPerPage
-  );
+  // Fetching the first 12 products
+  const { products, totalProducts } = await fetchInitialProducts(1, 12);
 
   // Calculate total pages based on total products
   const totalPages = Math.ceil(totalProducts / productsPerPage);
@@ -67,13 +57,15 @@ const ShopPageContent = async ({ searchParams }: ShopPageContentProps) => {
 
               <CategoryFilter categories={categories} />
             </div>
-
+            <ShopPageReset
+              initialProducts={products}
+              totalProducts={totalProducts}
+            />
             {/* <div className="mt-6 grid grid-cols-2 gap-x-4 gap-y-10 sm:gap-x-6 md:grid-cols-2 md:gap-y-0 lg:gap-x-8"> */}
             <div className="">
               <ProductList
                 initialProducts={products}
                 totalProducts={totalProducts}
-                initialPage={pageFromQuery}
               />
             </div>
           </div>

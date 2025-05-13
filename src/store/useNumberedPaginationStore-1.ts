@@ -9,7 +9,6 @@ import { fetchPaginatedProducts } from "@/services/productServices";
 // Define the state and actions for pagination
 interface NumberedPaginationStore {
   currentPage: number; // Current active page
-  setCurrentPage: (page: number) => void; // NEW: manually update page
   totalProducts: number; // Total number of products
   productsPerPage: number; // Number of products displayed per page
   totalPages: number; // Total number of pages (calculated)
@@ -31,8 +30,6 @@ export const useNumberedPaginationStore = create<NumberedPaginationStore>()(
       totalPages: 0, // Dynamically calculated
       pageData: {}, // Cached data for each page
       loading: false,
-
-      setCurrentPage: (page) => set({ currentPage: page }),
 
       setLoading: (loading) => set({ loading }),
 
