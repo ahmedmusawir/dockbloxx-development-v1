@@ -10,6 +10,8 @@ import { fetchPaginatedProducts } from "@/services/productServices";
 interface NumberedPaginationStore {
   currentPage: number; // Current active page
   setCurrentPage: (page: number) => void; // NEW: manually update page
+  cacheKey: string; // NEW
+  setCacheKey: (key: string) => void; // NEW
   totalProducts: number; // Total number of products
   productsPerPage: number; // Number of products displayed per page
   totalPages: number; // Total number of pages (calculated)
@@ -19,13 +21,19 @@ interface NumberedPaginationStore {
   setTotalProducts: (count: number) => void; // Set total products
   fetchPage: (page: number) => Promise<void>; // Fetch products for a specific page
   setPageData: (page: number, products: Product[]) => void; // Cache a specific page
-  resetPagination: (initialProducts: Product[], totalProducts: number) => void; // Reset pagination
+  // resetPagination: (initialProducts: Product[], totalProducts: number) => void; // Reset pagination
+  resetPagination: (
+    initialProducts: Product[],
+    totalProducts: number,
+    key?: string // ← allow an optional 3rd arg
+  ) => void;
 }
 
 export const useNumberedPaginationStore = create<NumberedPaginationStore>()(
   persist(
     (set, get) => ({
       currentPage: 1, // Default to first page
+      cacheKey: "shop", // default namespace
       totalProducts: 0, // Initialize with 0 products
       productsPerPage: 12, // Default per-page limit
       totalPages: 0, // Dynamically calculated
@@ -33,7 +41,7 @@ export const useNumberedPaginationStore = create<NumberedPaginationStore>()(
       loading: false,
 
       setCurrentPage: (page) => set({ currentPage: page }),
-
+      setCacheKey: (key) => set({ cacheKey: key }),
       setLoading: (loading) => set({ loading }),
 
       // Set total products and calculate total pages
@@ -88,9 +96,10 @@ export const useNumberedPaginationStore = create<NumberedPaginationStore>()(
         })),
 
       // Reset pagination (for SSR data or initial state)
-      resetPagination: (initialProducts, totalProducts) => {
+      resetPagination: (initialProducts, totalProducts, key = "shop") => {
         set({
           currentPage: 1,
+          cacheKey: key,
           totalProducts,
           totalPages: Math.ceil(totalProducts / get().productsPerPage),
           pageData: { 1: initialProducts }, // Cache initial SSR data
@@ -105,6 +114,7 @@ export const useNumberedPaginationStore = create<NumberedPaginationStore>()(
         totalProducts: state.totalProducts,
         totalPages: state.totalPages,
         pageData: state.pageData, // Persist cached pages only
+        cacheKey: state.cacheKey,
       }),
     }
   )

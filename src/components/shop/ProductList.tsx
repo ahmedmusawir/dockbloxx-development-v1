@@ -10,6 +10,7 @@ interface ProductListProps {
   initialProducts: Product[]; // Server-side rendered initial products
   totalProducts: number; // Total number of products (from SSR)
   initialPage: number; // Page that was SSR‑rendered
+  cacheKey: string; // Namespace for the cache (e.g. \"shop\", \"accessories\")
 }
 
 // const ProductList = ({ initialProducts, totalProducts }: ProductListProps) => {
@@ -17,6 +18,7 @@ const ProductList = ({
   initialProducts,
   totalProducts,
   initialPage,
+  cacheKey,
 }: ProductListProps) => {
   const {
     currentPage,
@@ -25,26 +27,39 @@ const ProductList = ({
     setPageData,
     setTotalProducts,
     setCurrentPage,
+    cacheKey: storeKey,
+    setCacheKey,
+    resetPagination,
     loading,
   } = useNumberedPaginationStore();
 
   // const { cartItems } = useCartStore();
   // console.log("Cart Items from Zustand [ProductList.tsx]", cartItems);
 
-  // Hydrate store with the server‑rendered page (could be 1, 2, 3…)
+  // 1) If we’ve navigated to a different namespace, wipe & seed cache
   useEffect(() => {
+    if (storeKey !== cacheKey) {
+      resetPagination(initialProducts, totalProducts, cacheKey);
+      // setCacheKey(cacheKey);
+      return;
+    }
+
+    // 2) Normal hydration for this namespace
     if (!pageData[initialPage]) {
-      setPageData(initialPage, initialProducts); // Cache the SSR page
-      setTotalProducts(totalProducts); // Store total count
-      setCurrentPage(initialPage); // Sync current page
+      setPageData(initialPage, initialProducts);
+      setTotalProducts(totalProducts);
+      setCurrentPage(initialPage);
     }
   }, [
+    cacheKey,
     initialPage,
     initialProducts,
     totalProducts,
     setCurrentPage,
     setPageData,
     setTotalProducts,
+    setCacheKey,
+    storeKey,
     pageData,
   ]);
 

@@ -24,7 +24,7 @@ const NumberedPagination = ({ totalPages }: NumberedPaginationProps) => {
       // Update query param → triggers a server render of the desired page
       const params = new URLSearchParams(searchParams.toString());
       params.set("page", page.toString());
-      router.push(`?${params.toString()}`, { scroll: true });
+      router.push(`?${params.toString()}`, { scroll: false });
 
       // Optimistically update local state so pagination UI highlights immediately
       setCurrentPage(page);

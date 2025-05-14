@@ -74,6 +74,7 @@ const ShopPageContent = async ({ searchParams }: ShopPageContentProps) => {
                 initialProducts={products}
                 totalProducts={totalProducts}
                 initialPage={pageFromQuery}
+                cacheKey="shop"
               />
             </div>
           </div>
