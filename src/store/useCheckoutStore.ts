@@ -111,6 +111,7 @@ export const useCheckoutStore = create<CheckoutStore>()(
         taxTotal: 0,
         discountTotal: 0,
         total: 0,
+        customerNote: "",
       },
 
       // NEW: Setter for PaymentIntent client secret
@@ -298,6 +299,7 @@ export const useCheckoutStore = create<CheckoutStore>()(
             taxTotal: 0,
             discountTotal: 0,
             total: 0,
+            customerNote: "",
           },
         }),
       // NEW: Setter for orderValidated
