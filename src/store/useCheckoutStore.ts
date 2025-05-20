@@ -45,6 +45,8 @@ interface CheckoutStore {
   setEnableRegistration: (value: boolean) => void; // NEW: Setter function for enableRegistration
   isHydrated: boolean;
   setIsHydrated: (value: boolean) => void;
+  customerNote: string;
+  setCustomerNote: (note: string) => void;
 }
 
 type CheckoutPersist = (
@@ -65,6 +67,16 @@ export const useCheckoutStore = create<CheckoutStore>()(
       paymentIntentClientSecret: "", // Initially empty
       billingSameAsShipping: true, // Default: billing is same as shipping
       orderValidated: false, // NEW: Initially, order is not validated
+      customerNote: "",
+
+      setCustomerNote: (note: string) =>
+        set((state) => ({
+          checkoutData: {
+            ...state.checkoutData,
+            customerNote: note,
+          },
+        })),
+
       checkoutData: {
         billing: {
           first_name: "",
