@@ -8,7 +8,245 @@
 
 import { CheckoutData } from "@/types/checkout";
 import { CartItem } from "@/types/cart";
-import { Coupon } from "@/types/coupon";
+import { Coupon, CouponMeta } from "@/types/coupon";
+
+// --- START: NEW CODE FOR PHASE 1 ---
+
+/**
+ * Parses the raw meta_data from a Coupon object into a clean, typed object.
+ * This acts as an anti-corruption layer to protect our app from API changes.
+ * @param coupon - The raw coupon object from the API.
+ * @returns {CouponMeta} A structured object with our custom coupon properties.
+ */
+export function parseCouponMeta(coupon: Coupon): CouponMeta {
+  const meta: CouponMeta = {};
+
+  // Ensure meta_data exists and is an array before iterating
+  if (!Array.isArray(coupon.meta_data)) {
+    return meta;
+  }
+
+  coupon.meta_data.forEach(({ key, value }) => {
+    if (key === "_dockbloxx_discount_percent_per_product") {
+      const percentValue = Number(value);
+      if (!isNaN(percentValue)) {
+        meta.percentPerProduct = percentValue;
+      }
+    }
+
+    if (key === "_dockbloxx_allowed_emails") {
+      // Handle both array (from our plugin) and comma-separated string (manual entry)
+      const emails = Array.isArray(value)
+        ? value
+        : String(value)
+            .split(",")
+            .map((v) => v.trim());
+
+      // Filter out any empty strings and convert to lowercase
+      meta.allowedEmails = emails
+        .filter((email) => email)
+        .map((email) => email.toLowerCase());
+    }
+
+    // NEW: Extract expiry time (HH:MM format)
+    if (key === "_expiry_time") {
+      meta.expiryTime = String(value).trim();
+    }
+
+    // NEW: Extract expiry timezone (IANA timezone string)
+    // if (key === "_expiry_timezone") {
+    //   meta.expiryTimezone = String(value).trim();
+    // }
+
+    // NEW: Extract expiry timezone (IANA timezone string)
+    if (key === "_expiry_timezone") {
+      // Handle format: "[UTC+08:00] Asia/Kuala_Lumpur" or just "Asia/Kuala_Lumpur"
+      const rawTimezone = String(value).trim();
+
+      // Extract just the IANA timezone part (after the ] if it exists)
+      const match = rawTimezone.match(/\]\s*(.+)$/);
+      meta.expiryTimezone = match ? match[1].trim() : rawTimezone;
+    }
+  });
+
+  return meta;
+}
+
+/**
+ * DEBUG ONLY: Comprehensive timezone debugging
+ * Shows all timezone-related information in one place
+ */
+export function debugTimezoneInfo(coupon: Coupon, meta: CouponMeta): void {
+  console.log("\n" + "=".repeat(80));
+  console.log("🔍 TIMEZONE DEBUG REPORT - " + coupon.code);
+  console.log("=".repeat(80));
+
+  // 1. What the API gave us
+  console.log("\n📦 RAW DATA FROM API:");
+  console.log("  - expires_on:", coupon.expires_on);
+  console.log("  - meta_data:", coupon.meta_data);
+
+  // 2. What we parsed
+  console.log("\n🔧 PARSED META:");
+  console.log("  - expiryTime:", meta.expiryTime);
+  console.log("  - expiryTimezone:", meta.expiryTimezone);
+
+  // 3. Current time in different formats
+  const now = new Date();
+  console.log("\n⏰ CURRENT TIME (Browser):");
+  console.log("  - Browser local time:", now.toString());
+  console.log("  - UTC time:", now.toUTCString());
+  console.log("  - ISO string:", now.toISOString());
+
+  // 4. Current time in the coupon's timezone
+  if (meta.expiryTimezone) {
+    try {
+      const formatter = new Intl.DateTimeFormat("en-US", {
+        timeZone: meta.expiryTimezone,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+        timeZoneName: "short",
+      });
+
+      const timeInCouponTZ = formatter.format(now);
+      console.log(
+        "\n🌍 CURRENT TIME IN COUPON TIMEZONE (" + meta.expiryTimezone + "):"
+      );
+      console.log("  - Formatted:", timeInCouponTZ);
+
+      // Get individual parts
+      const parts = formatter.formatToParts(now);
+      const year = parts.find((p) => p.type === "year")?.value;
+      const month = parts.find((p) => p.type === "month")?.value;
+      const day = parts.find((p) => p.type === "day")?.value;
+      const hour = parts.find((p) => p.type === "hour")?.value;
+      const minute = parts.find((p) => p.type === "minute")?.value;
+      const second = parts.find((p) => p.type === "second")?.value;
+
+      console.log("  - Year:", year);
+      console.log("  - Month:", month);
+      console.log("  - Day:", day);
+      console.log("  - Hour:", hour);
+      console.log("  - Minute:", minute);
+      console.log("  - Second:", second);
+    } catch (error) {
+      console.log("  ❌ Error formatting time in timezone:", error);
+    }
+  }
+
+  // 5. Expiry time breakdown
+  console.log("\n📅 COUPON EXPIRY:");
+  console.log("  - Date:", coupon.expires_on);
+  console.log("  - Time:", meta.expiryTime || "NOT SET");
+  console.log("  - Timezone:", meta.expiryTimezone || "NOT SET");
+  console.log(
+    "  - Combined:",
+    `${coupon.expires_on}T${meta.expiryTime || "00:00"}:00`
+  );
+
+  // 6. Server location (if we can detect it)
+  console.log("\n🖥️ BROWSER INFO:");
+  console.log("  - Timezone offset (minutes):", now.getTimezoneOffset());
+  console.log(
+    "  - Detected timezone:",
+    Intl.DateTimeFormat().resolvedOptions().timeZone
+  );
+
+  console.log("\n" + "=".repeat(80) + "\n");
+}
+// --- END: NEW CODE FOR PHASE 1 ---
+
+/**
+ * Checks if a coupon is expired using timezone-aware validation.
+ * Combines date + time + timezone to perform accurate UTC-based comparison.
+ *
+ * @param coupon - The coupon object with expires_on date
+ * @param meta - Parsed meta data containing expiryTime and expiryTimezone
+ * @returns {boolean} - true if expired, false if still valid
+ */
+/**
+ * Checks if a coupon is expired using timezone-aware validation.
+ * Combines date + time + timezone to perform accurate UTC-based comparison.
+ *
+ * @param coupon - The coupon object with expires_on date
+ * @param meta - Parsed meta data containing expiryTime and expiryTimezone
+ * @returns {boolean} - true if expired, false if still valid
+ */
+
+/**
+ * Checks if a coupon is expired using timezone-aware validation.
+ * Combines date + time + timezone to perform accurate UTC-based comparison.
+ *
+ * @param coupon - The coupon object with expires_on date
+ * @param meta - Parsed meta data containing expiryTime and expiryTimezone
+ * @returns {boolean} - true if expired, false if still valid
+ */
+export function isCouponExpiredByTimezone(
+  coupon: Coupon,
+  meta: CouponMeta
+): boolean {
+  // If no expiry date is set, coupon never expires
+  if (!coupon.expires_on) {
+    return false;
+  }
+
+  // If timezone data is missing, fall back to date-only check
+  if (!meta.expiryTime || !meta.expiryTimezone) {
+    console.warn(
+      `[Coupon ${coupon.code}] Missing timezone data. Falling back to date-only check.`
+    );
+    return new Date() > new Date(coupon.expires_on);
+  }
+
+  try {
+    const expiryDate = coupon.expires_on; // "2025-10-06"
+    const timezone = meta.expiryTimezone; // "Asia/Kuala_Lumpur"
+
+    // DATE-ONLY VALIDATION (Timezone-Aware)
+    // Strategy: Check what "today's date" is in the coupon's timezone
+    
+    // Get current date in the coupon's timezone
+    const nowInTZ = new Date().toLocaleDateString('en-CA', {
+      timeZone: timezone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }); // Returns "YYYY-MM-DD" format
+    
+    // Compare dates as strings (both in YYYY-MM-DD format)
+    // Coupon expires at END of the expiry date in its timezone
+    const isExpired = nowInTZ > expiryDate;
+
+    console.log(`[Coupon Expiry Check - ${coupon.code}]`, {
+      timezone,
+      expiryDate,
+      nowInTZ,
+      isExpired,
+      explanation: isExpired 
+        ? `Today (${nowInTZ}) is after expiry date (${expiryDate})` 
+        : `Coupon valid until end of ${expiryDate} (${timezone})`,
+    });
+
+    return isExpired;
+  } catch (error) {
+    console.error(
+      `[Coupon ${coupon.code}] Error parsing timezone data:`,
+      error
+    );
+    // Fall back to date-only check on error
+    return new Date() > new Date(coupon.expires_on);
+  }
+}
+
+/**
+ * Validates a coupon based on expiry date, min/max spend, and product/category restrictions.
+ * ... (rest of the file remains the same for now) ...
+ */
 
 /**
  * Validates a coupon based on expiry date, min/max spend, and product/category restrictions.
@@ -20,16 +258,83 @@ export const validateCoupon = (
   coupon: Coupon,
   checkoutData: CheckoutData
 ): { isValid: boolean; message: string } => {
-  const now = new Date();
-  const expiryDate = new Date(coupon.expires_on);
+  const meta = parseCouponMeta(coupon);
+  const userEmail = checkoutData.billing.email?.trim().toLowerCase();
+  const userZipCode = checkoutData.shipping.postcode?.trim();
 
-  // 1. Check if coupon is expired
-  if (now > expiryDate) {
-    console.warn("Coupon expired:", coupon.code);
+  console.log("--- [COUPON VALIDATION TRACE] ---");
+  console.log("Coupon Code:", coupon.code);
+  console.log("User Email:", userEmail);
+  console.log("User Zip Code:", userZipCode);
+  console.log("Allowed Emails from Meta:", meta.allowedEmails);
+
+  // 0. REQUIRE EMAIL (Security Check)
+  if (!userEmail) {
+    console.log("Validation FAILED: No email provided.");
+    return {
+      isValid: false,
+      message: "Please enter your email address to apply a coupon.",
+    };
+  }
+
+  // 0.1 REQUIRE ZIP CODE (Shipping Check)
+  if (!userZipCode) {
+    console.log("Validation FAILED: No zip code provided.");
+    return {
+      isValid: false,
+      message: "Please enter your shipping zip code to apply a coupon.",
+    };
+  }
+
+  // 1. Email Restriction Check (If coupon has specific allowed emails)
+  if (meta.allowedEmails && meta.allowedEmails.length > 0) {
+    const isMatch = meta.allowedEmails.includes(userEmail);
+    console.log("Email check result - Is Match:", isMatch);
+
+    if (!isMatch) {
+      console.log("Validation FAILED: Email not on allowed list.");
+      return {
+        isValid: false,
+        message: "This coupon is restricted to specific users.",
+      };
+    }
+  }
+
+  // --- START: UPGRADED LOGIC FOR QUANTITY LIMIT ---
+
+  // 2. If it's a 100% "FREE" coupon, check the TOTAL quantity of eligible items.
+  if (meta.percentPerProduct === 100) {
+    // Find all items in the cart that are eligible for this coupon
+    const eligibleItems = checkoutData.cartItems.filter((item) =>
+      coupon.products_included.includes(item.id)
+    );
+
+    // Calculate the total quantity of these eligible items
+    const totalEligibleQuantity = eligibleItems.reduce(
+      (sum, item) => sum + item.quantity,
+      0
+    );
+
+    if (totalEligibleQuantity > 1) {
+      console.warn(
+        `Coupon ${coupon.code} cannot be applied. Total quantity of eligible free items is ${totalEligibleQuantity}.`
+      );
+      return {
+        isValid: false,
+        message: "Free item coupons are limited to a total quantity of one.",
+      };
+    }
+  }
+
+  // --- END: UPGRADED LOGIC ---
+
+  // 2.2 Expiration Check (Timezone-Aware)
+  if (isCouponExpiredByTimezone(coupon, meta)) {
+    console.log("Validation FAILED: Coupon is expired (timezone-aware check).");
     return { isValid: false, message: "This coupon has expired." };
   }
 
-  // 2. Validate min/max spend requirements
+  // 3. Validate min/max spend requirements
   const subtotal = checkoutData.subtotal;
   const minSpend = parseFloat(coupon.min_spend);
   const maxSpend = parseFloat(coupon.max_spend);
@@ -53,7 +358,7 @@ export const validateCoupon = (
     };
   }
 
-  // 3. Validate product/category restrictions
+  // 4. Validate product/category restrictions
   const cartProductIds = checkoutData.cartItems.map((item) => item.id);
   const cartCategoryIds = checkoutData.cartItems.flatMap(
     (item) => item.categories
@@ -104,7 +409,7 @@ export const validateCoupon = (
     };
   }
 
-  // 4. Validate global usage limit
+  // 5. Validate global usage limit
   if (
     coupon.usage_count &&
     coupon.usage_limit &&
@@ -117,8 +422,8 @@ export const validateCoupon = (
     };
   }
 
-  // 5. Validate per-user usage limit
-  const userEmail = checkoutData.billing.email.trim().toLowerCase();
+  // 6. Validate per-user usage limit
+  // const userEmail = checkoutData.billing.email.trim().toLowerCase();
   const userUsageCount = coupon.used_by.filter(
     (email) => email.toLowerCase() === userEmail
   ).length;
@@ -243,10 +548,12 @@ export function calculateCouponDiscount(
   cartItems: CartItem[],
   subtotal: number
 ): number {
-  const now = new Date();
-  const expiryDate = new Date(coupon.expires_on);
-  if (now > expiryDate) {
-    console.warn(`Coupon ${coupon.code} is expired.`);
+  // Parse meta data for timezone-aware expiry check
+  const meta = parseCouponMeta(coupon);
+
+  // Use timezone-aware expiry check
+  if (isCouponExpiredByTimezone(coupon, meta)) {
+    console.warn(`Coupon ${coupon.code} is expired (timezone-aware check).`);
     return 0;
   }
 

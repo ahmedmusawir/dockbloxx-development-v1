@@ -86,7 +86,7 @@ export const useCheckoutStore = create<CheckoutStore>()(
           city: "",
           state: "",
           postcode: "",
-          country: "USA",
+          country: "US",
           email: "",
           phone: "",
         },
@@ -98,7 +98,7 @@ export const useCheckoutStore = create<CheckoutStore>()(
           city: "",
           state: "",
           postcode: "",
-          country: "USA",
+          country: "US",
           email: "",
           phone: "",
         },
@@ -235,31 +235,53 @@ export const useCheckoutStore = create<CheckoutStore>()(
         console.log("After applying coupon:", get().checkoutData.coupon);
       },
 
+      // removeCoupon: () =>
+      //   set((state) => {
+      //     // Create an updated checkout data object with the coupon removed.
+      //     const updatedCheckoutData = {
+      //       ...state.checkoutData,
+      //       coupon: null,
+      //     };
+
+      //     // Recalculate everything using our single source of truth.
+      //     const newTotals = updateCheckoutTotals(updatedCheckoutData);
+
+      //     return { checkoutData: newTotals };
+      //   }),
+
       removeCoupon: () =>
         set((state) => {
-          const { checkoutData } = state;
+          console.log("🗑️ [removeCoupon] BEFORE removal:", {
+            coupon: state.checkoutData.coupon,
+            shippingCost: state.checkoutData.shippingCost,
+            shippingMethod: state.checkoutData.shippingMethod,
+            subtotal: state.checkoutData.subtotal,
+            total: state.checkoutData.total,
+          });
 
-          // Restore original shipping cost based on subtotal
-          let restoredShippingCost = 0;
-
-          if (checkoutData.subtotal < 100) {
-            restoredShippingCost = 10; // Base flat rate for smaller orders
-          } else if (checkoutData.subtotal < 250) {
-            restoredShippingCost = 20; // Mid-tier rate
-          } else {
-            restoredShippingCost = 35; // Highest flat rate for large orders
-          }
-
-          return {
-            checkoutData: {
-              ...checkoutData,
-              coupon: null, // Remove the applied coupon
-              discountTotal: 0, // Reset discount
-              shippingMethod: "flat_rate", // Force it back to Flat Rate
-              shippingCost: restoredShippingCost, // Reset shipping based on subtotal
-              total: checkoutData.subtotal + restoredShippingCost, // Ensure total recalculates properly
-            },
+          // Create an updated checkout data object with the coupon removed.
+          const updatedCheckoutData = {
+            ...state.checkoutData,
+            coupon: null,
           };
+
+          console.log(
+            "🗑️ [removeCoupon] After setting coupon to null:",
+            updatedCheckoutData
+          );
+
+          // Recalculate everything using our single source of truth.
+          const newTotals = updateCheckoutTotals(updatedCheckoutData);
+
+          console.log("🗑️ [removeCoupon] AFTER recalculation:", {
+            coupon: newTotals.coupon,
+            shippingCost: newTotals.shippingCost,
+            shippingMethod: newTotals.shippingMethod,
+            subtotal: newTotals.subtotal,
+            total: newTotals.total,
+          });
+
+          return { checkoutData: newTotals };
         }),
 
       // Reset Checkout (After Order is Placed)
