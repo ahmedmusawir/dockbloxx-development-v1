@@ -114,7 +114,7 @@ export const policies = [
   
   ### Contact us
   
-  For more information about our privacy practices, if you have questions, or if you would like to make a complaint, please contact us by e-mail at sales@devdockbloxx.wpenginepowered.com or by mail using the details provided below:
+  For more information about our privacy practices, if you have questions, or if you would like to make a complaint, please contact us by e-mail at sales@dockbloxx.com or by mail using the details provided below:
   
   2349 Centennial Dr.
   Gainesville, GA 30504
