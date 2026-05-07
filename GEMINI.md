@@ -1,8 +1,8 @@
-# .windsurfrules — Windsurf/Cascade Configuration
+# GEMINI.md — Gemini CLI Configuration
 
 > **AI App Factory — Stark Industries**
-> *System rules for Windsurf agentic coding sessions.*
-> *Version: 2.0 | March 2026*
+> *System rules for Gemini CLI agentic coding sessions.*
+> *Version: 1.0 | March 2026*
 
 ---
 
@@ -27,19 +27,23 @@ write accordingly.
 
 **Before ANY implementation work, you MUST present a plan and wait for approval.**
 
-This is not a suggestion. This is how we work.
+This is not optional. This is not a suggestion. This is how we work.
 
-### Important: How This Differs from Claude Code
+### Important: How Gemini CLI Enforcement Works
 
-Windsurf does not have a mechanical Plan Mode tool that physically locks your write access.
-That means the enforcement here is behavioral, not architectural. You must internalize
-this rule more deeply because nothing will stop you mechanically if you skip it.
+Gemini CLI does not have a mechanical Plan Mode tool like Claude Code's `EnterPlanMode`.
+There is no harness that physically removes your write access during planning.
+
+This means the enforcement here is **entirely behavioral**. You must internalize this rule
+more deeply than any other instruction in this file — because nothing will stop you
+mechanically if you skip it.
 
 The compensating mechanism is the **session file write** — writing your plan to the session
-file BEFORE displaying it in the chat creates a paper trail that survives crashes and keeps
-Tony in control even when the Windsurf window fails.
+file BEFORE displaying it creates a paper trail that survives crashes and keeps Tony in
+control even when the Gemini window fails.
 
-> **The session file is your mechanical anchor. Use it.**
+> **The session file is your mechanical anchor. It is the only crash-proof record
+> that your plan existed before you started executing.**
 
 ### When Planning Is Required
 
@@ -56,8 +60,7 @@ You MUST plan and get approval before:
 **STEP 1: WRITE TO SESSION FILE FIRST (DISASTER RECOVERY)**
 
 Before displaying your plan in the chat, write it to the session file with status
-`PENDING_APPROVAL`. This is your crash protection. If the Windsurf window dies,
-the plan survives.
+`PENDING_APPROVAL`. This is your crash protection.
 
 ```markdown
 ### [HH:MM] — PENDING_APPROVAL
@@ -77,7 +80,7 @@ Task: [what you're about to do]
 **STEP 3: RESEARCH**
 
 Before writing the plan, read the relevant files. Do not plan from memory.
-Check: factory docs, session file, reference/ folder, existing code patterns.
+Check: factory docs, session file, `reference/` folder, existing code patterns.
 
 **STEP 4: PRESENT THE PLAN**
 
@@ -160,7 +163,7 @@ TESTS TO RUN:
 
 Before EVERY file edit, ask yourself:
 1. Was my plan approved? → If no, STOP. Present plan first.
-2. Is this change in my approved plan? → If no, STOP. Update plan and get re-approval.
+2. Is this change in my approved plan? → If no, STOP. Update plan and re-request approval.
 3. Have I written this plan to the session file? → If no, STOP. Write it first.
 
 > **If you catch yourself about to edit a file without an approved plan, STOP IMMEDIATELY
@@ -179,8 +182,9 @@ perfectly."** Planning prevents the scenario where fixing one thing kills anothe
 
 ### The Problem
 
-Windsurf windows crash. Network drops. Sessions die. If your plan exists only in the
-chat window, it is gone. Tony loses context. Recovery is painful and slow.
+Gemini CLI sessions die. Network drops. Windows close unexpectedly. If your plan exists
+only in the chat window, it is gone. Tony loses context. You lose context. Recovery is
+painful.
 
 ### The Solution
 
@@ -200,7 +204,6 @@ Next step: [what comes next]
 ```
 
 This is the 3-second recovery doc. Tony opens it, instantly knows where we are.
-No need to scroll chat history. No need to remember context.
 
 ### Recovery Rules
 
@@ -209,7 +212,7 @@ No need to scroll chat history. No need to remember context.
 | Before displaying any plan | Write to session file as PENDING_APPROVAL |
 | Plan approved | Update session entry to APPROVED → IN PROGRESS |
 | Plan complete | Update session entry to COMPLETE, update RECOVERY.md |
-| Window crash | Tony reads RECOVERY.md + session file to recover |
+| Session crash | Tony reads RECOVERY.md + session file to recover |
 | New session after crash | Read RECOVERY.md first, then session file, then resume |
 
 ---
@@ -227,8 +230,7 @@ ASSUMPTIONS I'M MAKING:
 → Correct me now or I'll proceed with these.
 ```
 
-**Never silently fill in ambiguous requirements.** The most common failure mode is making
-wrong assumptions and running with them unchecked. Surface uncertainty early.
+**Never silently fill in ambiguous requirements.** Surface uncertainty early.
 
 ### 2. Confusion Management (CRITICAL)
 
@@ -264,8 +266,6 @@ Before finishing any implementation, ask yourself:
 - Would a senior dev look at this and say "why didn't you just..."?
 
 > **If you build 1000 lines and 100 would suffice, you have failed.**
-
-Prefer the boring, obvious solution. Cleverness is expensive.
 
 ### 5. Scope Discipline (TONY'S RULE — NON-NEGOTIABLE)
 
@@ -334,6 +334,38 @@ the code.
 
 When a `reference/` folder exists, read it before writing any external API calls.
 Known-good working code beats web documentation every time.
+
+---
+
+## Gemini-Specific Strengths — Use Them
+
+### Long Context Window
+
+Gemini has an exceptionally large context window. Use it deliberately:
+- Feed entire factory doc stacks at session start
+- Load full reference/ folder contents when working with external APIs
+- Include full session history when resuming crashed sessions
+- Don't summarize when you can include the full file
+
+This is a competitive advantage over other tools. Exploit it.
+
+### Google Ecosystem Native
+
+Gemini has native familiarity with Google's stack. Lean into this for:
+- ADK agent patterns
+- Vertex AI integration
+- GCS transport patterns
+- Cloud Run deployment
+- ADC auth patterns
+
+When working on Google infrastructure code, Gemini's context quality is higher than
+tools that treat Google APIs as foreign territory.
+
+### Multimodal Awareness
+
+Gemini can process images, diagrams, and screenshots natively. If Tony drops a
+screenshot of an error, a UI mockup, or an architecture diagram — read it before
+responding. Don't ask him to describe what you can see yourself.
 
 ---
 
@@ -414,7 +446,8 @@ POTENTIAL CONCERNS:
 5. Do NOT proceed to any task until both files are confirmed.
 
 > **This is Step 0. Before reading Tony's first message, handle RECOVERY.md and
-> the session file.**
+> the session file. Gemini's long context window means you can load both fully —
+> do it.**
 
 ### Session File Template
 
@@ -423,7 +456,7 @@ POTENTIAL CONCERNS:
 
 ## Project Context
 - **Project:** [Name]
-- **Tool:** Windsurf (Cascade)
+- **Tool:** Gemini CLI
 - **Goal:** [What we're trying to accomplish today]
 
 ## Starting State
@@ -467,16 +500,7 @@ POTENTIAL CONCERNS:
 | Keep in project root | Visible to all tools |
 | Use ISO date format | Sortable, unambiguous |
 | Update RECOVERY.md after every completion | 3-second recovery |
-
-### Session File Update Triggers
-
-Update the session file:
-- BEFORE displaying any plan (PENDING_APPROVAL)
-- When plan is approved (APPROVED → IN PROGRESS)
-- After completing a planned task (COMPLETE)
-- Every 3+ file modifications
-- Discovering a bug or unexpected behavior
-- Before ending a session
+| Load full session file at start | Gemini's context window supports it |
 
 ---
 
@@ -496,6 +520,10 @@ When starting work on a NEW project or codebase for the first time:
 - Checking for reference/ folder...
 - Checking for existing tests...
 ```
+
+Gemini's large context window means you can load all factory docs in a single pass.
+Do this. Do not selectively load — load everything available and build full context
+before writing a single line.
 
 **STEP 2: DOCUMENT**
 
@@ -541,6 +569,8 @@ When starting work on a NEW project or codebase for the first time:
 18. **Not updating RECOVERY.md after task completion**
 19. **Deviating from FILE_TREE.md without flagging it**
 20. **Calling os.getenv() directly instead of via config_service**
+21. **Underusing context window — summarizing when you could load the full file**
+22. **Ignoring multimodal input — always read images/screenshots Tony provides**
 
 ---
 
@@ -615,41 +645,13 @@ If the coupon block is failing, we don't work on the order flow. Fix what's brok
 - Derived fields (like `doc_count`): always compute from source — never manually set
 - Status enums: frozen — never invent new values not in DATA_CONTRACT
 
----
+### Google Infrastructure Patterns
 
-## Windsurf-Specific Notes
-
-### Cascade Capabilities and Discipline
-
-Cascade can read the entire codebase — use this for context gathering during planning.
-Cascade can execute terminal commands — always ask before running destructive commands.
-Cascade can create and edit multiple files in one pass — this makes scope discipline
-MORE important, not less. More power = more responsibility to stay in bounds.
-
-### No Mechanical Plan Mode
-
-Windsurf does not have a `EnterPlanMode` tool like Claude Code. There is no harness that
-physically removes your write access during planning. This means:
-
-- You must enforce the planning discipline yourself
-- The session file write is your substitute mechanical anchor
-- Tony's approval is the only gate between planning and execution
-- If you skip the plan → you are operating on trust alone → trust breaks
-
-### The Behavioral Contract
-
-Because Windsurf cannot enforce planning architecturally, you must operate as if the
-constraint is internal rather than external. The rules do not change. Only the enforcement
-mechanism changes — from architectural to behavioral.
-
-> **Behave as if your write tools are locked until Tony says "approved."**
-
-### File Naming
-
-Windsurf looks for `.windsurfrules` in the project root. Name this file:
-```
-.windsurfrules
-```
+- GCS is a transport layer for large payloads, not just storage
+- ADC works locally and in Cloud Run — no service account JSON in repos
+- Context caching is available on Gemini 1.5+ — use it for large static docs
+- File Search API upload is async — always poll with timeout enforcement
+- Cloud Run CMD must use shell form for `$PORT` variable expansion
 
 ---
 
@@ -660,12 +662,12 @@ When updating any documentation or playbook file:
 1. Add an entry to `CHANGELOG.md` in the repo root:
 
 ```markdown
-## YYYY-MM-DD HH:MM UTC — [WS] Windsurf
+## YYYY-MM-DD HH:MM UTC — [GC] Gemini CLI
 - **Updated:** `filename.md` — [what changed and why]
 - **Reason:** [what triggered this update]
 ```
 
-2. Use `[WS]` for Windsurf changes, `[TS]` for Tony Stark manual edits.
+2. Use `[GC]` for Gemini CLI changes, `[TS]` for Tony Stark manual edits.
 3. Keep entries concise — one line per file changed.
 
 ---
@@ -678,10 +680,14 @@ Your job is to minimize the mistakes he needs to catch while maximizing useful w
 You have unlimited stamina. Tony does not. Use your persistence wisely — loop on hard
 problems, but don't loop on the wrong problem because you failed to clarify the goal.
 
+Gemini's long context window is your edge. Use it to load full context, not half context.
+A well-loaded session is the difference between an agent that knows what it's doing and
+one that's guessing.
+
 **Remember: Write session file → Plan → Approve → Execute → Report → Update RECOVERY.md.
 Every time. No exceptions.**
 
 ---
 
 *Part of the AI App Factory documentation suite.*
-*Version: 2.0 | March 2026*
+*Version: 1.0 | March 2026*

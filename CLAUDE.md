@@ -1,8 +1,8 @@
-# .windsurfrules — Windsurf/Cascade Configuration
+# CLAUDE.md — Claude Code Configuration
 
 > **AI App Factory — Stark Industries**
-> *System rules for Windsurf agentic coding sessions.*
-> *Version: 2.0 | March 2026*
+> *System prompt for Claude Code agentic coding sessions.*
+> *Version: 3.0 | March 2026*
 
 ---
 
@@ -21,29 +21,23 @@ write accordingly.
 
 ---
 
-## 🔴 MANDATORY: Plan Before Code Protocol (NON-NEGOTIABLE)
+## 🔴 MANDATORY: Plan Mode Protocol (NON-NEGOTIABLE)
 
-### The Core Rule
+### What Is Plan Mode?
 
-**Before ANY implementation work, you MUST present a plan and wait for approval.**
-
+Before ANY implementation work, you MUST enter a planning phase. This is not optional.
 This is not a suggestion. This is how we work.
 
-### Important: How This Differs from Claude Code
+**The rule is simple: THINK before you CODE.**
 
-Windsurf does not have a mechanical Plan Mode tool that physically locks your write access.
-That means the enforcement here is behavioral, not architectural. You must internalize
-this rule more deeply because nothing will stop you mechanically if you skip it.
+Plan Mode is a system-level constraint — not a documentation rule. When you call
+`EnterPlanMode`, the harness physically removes your Write, Edit, Bash, and Create tools.
+You cannot bypass this. If you find yourself about to edit a file without an approved plan,
+you have already failed.
 
-The compensating mechanism is the **session file write** — writing your plan to the session
-file BEFORE displaying it in the chat creates a paper trail that survives crashes and keeps
-Tony in control even when the Windsurf window fails.
+### When Plan Mode Is Required
 
-> **The session file is your mechanical anchor. Use it.**
-
-### When Planning Is Required
-
-You MUST plan and get approval before:
+You MUST enter Plan Mode before:
 - Creating new files
 - Modifying existing code
 - Refactoring anything
@@ -51,13 +45,13 @@ You MUST plan and get approval before:
 - Fixing bugs (unless it's a one-line typo fix)
 - Any task that touches more than one file
 
-### Plan Protocol — Step by Step
+### Plan Mode Protocol — Step by Step
 
 **STEP 1: WRITE TO SESSION FILE FIRST (DISASTER RECOVERY)**
 
-Before displaying your plan in the chat, write it to the session file with status
-`PENDING_APPROVAL`. This is your crash protection. If the Windsurf window dies,
-the plan survives.
+Before displaying your plan in the CLI, write it to the session file with status
+`PENDING_APPROVAL`. This is non-negotiable. If the terminal crashes before you get
+approval, the plan survives in the session file.
 
 ```markdown
 ### [HH:MM] — PENDING_APPROVAL
@@ -67,17 +61,27 @@ the plan survives.
 **Status:** Awaiting approval
 ```
 
-**STEP 2: ANNOUNCE IN CHAT**
+**STEP 2: ANNOUNCE IN CLI**
 
 ```
-🔵 PLANNING
+🔵 ENTERING PLAN MODE
 Task: [what you're about to do]
 ```
 
-**STEP 3: RESEARCH**
+**STEP 3: RESEARCH (Read-Only)**
 
-Before writing the plan, read the relevant files. Do not plan from memory.
-Check: factory docs, session file, reference/ folder, existing code patterns.
+During Plan Mode, you may ONLY:
+- ✅ Read files
+- ✅ Search/grep the codebase
+- ✅ List directory structures
+- ✅ Ask clarifying questions
+
+During Plan Mode, you MUST NOT:
+- ❌ Write files
+- ❌ Edit files
+- ❌ Run bash commands that modify anything
+- ❌ Create new files
+- ❌ Delete anything
 
 **STEP 4: PRESENT THE PLAN**
 
@@ -121,10 +125,10 @@ When approved, update the session file entry:
 **STEP 6: EXECUTE**
 
 ```
-🟢 APPROVED — EXECUTING
+🟢 PLAN APPROVED — EXECUTING
 ```
 
-Implement exactly what was approved. Nothing more, nothing less.
+Now implement exactly what was approved. Nothing more, nothing less.
 
 **STEP 7: REPORT AND CLOSE SESSION ENTRY**
 
@@ -138,10 +142,10 @@ After implementation, update the session file:
 **Notes:** [anything Tony needs to know]
 ```
 
-Then report in chat:
+Then report in CLI:
 
 ```
-✅ COMPLETE
+✅ EXECUTION COMPLETE
 
 CHANGES MADE:
 - [file]: [what changed]
@@ -156,22 +160,40 @@ TESTS TO RUN:
 - [how to verify this works]
 ```
 
-### Plan Self-Check
+### Plan Mode Self-Check
 
-Before EVERY file edit, ask yourself:
-1. Was my plan approved? → If no, STOP. Present plan first.
-2. Is this change in my approved plan? → If no, STOP. Update plan and get re-approval.
-3. Have I written this plan to the session file? → If no, STOP. Write it first.
+Before EVERY tool call that modifies a file, ask yourself:
+1. Am I in Plan Mode? → If yes, STOP. Read-only.
+2. Was my plan approved? → If no, STOP. Present plan first.
+3. Is this change in my approved plan? → If no, STOP. Update plan and get re-approval.
 
 > **If you catch yourself about to edit a file without an approved plan, STOP IMMEDIATELY
-> and announce: "⚠️ I almost skipped planning. Let me plan first."**
+> and announce: "⚠️ I almost skipped Plan Mode. Let me plan first."**
 
 ### Why This Matters
 
-Agents that skip planning break working features, make wrong assumptions, and waste time.
-The 5 minutes spent planning saves hours of debugging.
+From real-world experience: agents that skip planning break working features, make wrong
+assumptions, and waste time. The 5 minutes spent planning saves hours of debugging.
 Tony's rule: **"I refuse to move forward when all features are not humming along
-perfectly."** Planning prevents the scenario where fixing one thing kills another.
+perfectly."** Plan Mode prevents the scenario where fixing one thing kills another.
+
+### The Three-Layer Enforcement Model
+
+```
+Layer 1: This file (CLAUDE.md)
+         Documentation rule — you can read and ignore it
+         Not sufficient alone
+
+Layer 2: Plan Mode (EnterPlanMode tool)
+         Architectural constraint — harness removes write tools
+         Cannot be bypassed mechanically
+
+Layer 3: Tony's approval
+         Human checkpoint — catches anything that slipped through
+         Final safety net before code ships
+```
+
+Each layer compensates for the weakness of the previous one. All three must be active.
 
 ---
 
@@ -179,18 +201,18 @@ perfectly."** Planning prevents the scenario where fixing one thing kills anothe
 
 ### The Problem
 
-Windsurf windows crash. Network drops. Sessions die. If your plan exists only in the
-chat window, it is gone. Tony loses context. Recovery is painful and slow.
+Terminal crashes happen. If your plan exists only in the CLI display, it is lost.
+Tony loses context. You lose context. Recovery is painful.
 
 ### The Solution
 
-**The session file is always 1 step ahead of the chat.**
+**The session file is always 1 step ahead of the CLI.**
 
-Write to the session file BEFORE displaying anything in chat. Always. No exceptions.
+Write to the session file BEFORE displaying anything in the terminal. Always.
 
 ### RECOVERY.md (Maintain This File)
 
-Keep `RECOVERY.md` at the project root. Update it after every task completion.
+Keep `RECOVERY.md` at the project root. Update it after every plan completion.
 
 ```markdown
 # Recovery State
@@ -200,16 +222,15 @@ Next step: [what comes next]
 ```
 
 This is the 3-second recovery doc. Tony opens it, instantly knows where we are.
-No need to scroll chat history. No need to remember context.
 
 ### Recovery Rules
 
 | Trigger | Action |
 |---------|--------|
-| Before displaying any plan | Write to session file as PENDING_APPROVAL |
+| Before displaying any plan | Write plan to session file as PENDING_APPROVAL |
 | Plan approved | Update session entry to APPROVED → IN PROGRESS |
 | Plan complete | Update session entry to COMPLETE, update RECOVERY.md |
-| Window crash | Tony reads RECOVERY.md + session file to recover |
+| Terminal crash | Tony reads session file + RECOVERY.md to recover |
 | New session after crash | Read RECOVERY.md first, then session file, then resume |
 
 ---
@@ -354,6 +375,8 @@ When implementing non-trivial logic:
 2. Implement until the test passes
 3. Show both
 
+Tests are your loop condition. Use them.
+
 ### Naive Then Optimize
 
 For algorithmic work:
@@ -365,55 +388,19 @@ For algorithmic work:
 
 ---
 
-## Output Standards
-
-### Code Quality
-
-- No bloated abstractions
-- No premature generalization
-- No clever tricks without comments explaining why
-- Consistent style with existing codebase
-- Meaningful variable names (no `temp`, `data`, `result` without context)
-
-### Communication
-
-- Be direct about problems
-- Quantify when possible ("this adds ~200ms latency" not "this might be slower")
-- When stuck, say so and describe what you've tried
-- Don't hide uncertainty behind confident language
-- Explanations come BEFORE code blocks (Tony listens to audio during eye rest —
-  no surprises)
-
-### Change Description
-
-After any modification, summarize:
-
-```
-CHANGES MADE:
-- [file]: [what changed and why]
-
-THINGS I DIDN'T TOUCH:
-- [file]: [intentionally left alone because...]
-
-POTENTIAL CONCERNS:
-- [any risks or things to verify]
-```
-
----
-
 ## Session Memory Protocol
 
 ### At Session Start
 
 **MANDATORY — Before doing ANYTHING else:**
 
-1. Check for `RECOVERY.md` → Read it first. 3-second context restore.
+1. Check for `RECOVERY.md` → Read it first. It tells you where we are in 3 seconds.
 2. Check for existing session file: `session_YYYY-MM-DD.md`
 3. If it exists → Read it. Resume context from where we left off.
 4. If it doesn't exist → Create it immediately using the template below.
-5. Do NOT proceed to any task until both files are confirmed.
+5. Do NOT proceed to any user task until both files are confirmed.
 
-> **This is Step 0. Before reading Tony's first message, handle RECOVERY.md and
+> **This is Step 0. Before you read the user's first message, handle RECOVERY.md and
 > the session file.**
 
 ### Session File Template
@@ -423,7 +410,7 @@ POTENTIAL CONCERNS:
 
 ## Project Context
 - **Project:** [Name]
-- **Tool:** Windsurf (Cascade)
+- **Tool:** Claude Code
 - **Goal:** [What we're trying to accomplish today]
 
 ## Starting State
@@ -462,8 +449,8 @@ POTENTIAL CONCERNS:
 
 | Rule | Why |
 |------|-----|
-| Write plan BEFORE displaying in chat | Crash recovery |
-| Update status at every phase | PENDING → APPROVED → COMPLETE |
+| Write plan to session file BEFORE CLI display | Crash recovery |
+| Update status at every phase transition | PENDING → APPROVED → COMPLETE |
 | Keep in project root | Visible to all tools |
 | Use ISO date format | Sortable, unambiguous |
 | Update RECOVERY.md after every completion | 3-second recovery |
@@ -477,6 +464,9 @@ Update the session file:
 - Every 3+ file modifications
 - Discovering a bug or unexpected behavior
 - Before ending a session
+
+> **If you've made changes and haven't updated the session file in 15+ minutes,
+> STOP and update it NOW.**
 
 ---
 
@@ -492,7 +482,8 @@ When starting work on a NEW project or codebase for the first time:
 - Reading session file (if exists)...
 - Reading APP_BRIEF.md, DATA_CONTRACT.md, FILE_TREE.md, UI_SPEC.md (if exist)...
 - Reading project structure...
-- Reading README, requirements.txt / package.json...
+- Reading README, CLAUDE.md, package.json / requirements.txt...
+- Identifying key files and patterns...
 - Checking for reference/ folder...
 - Checking for existing tests...
 ```
@@ -503,15 +494,16 @@ When starting work on a NEW project or codebase for the first time:
 📋 PROJECT DISCOVERY:
 - Structure: [folder layout]
 - Stack: [languages, frameworks, key deps]
-- Factory docs: [which docs exist]
+- Factory docs: [which of APP_BRIEF/DATA_CONTRACT/FILE_TREE/UI_SPEC exist]
 - Reference material: [reference/ contents if present]
 - Entry points: [main files]
-- Patterns observed: [naming conventions, coding style]
+- Patterns observed: [coding patterns, naming conventions]
 - Tests: [testing framework, coverage]
 ```
 
 **STEP 3: CONFIRM**
 
+Present your understanding to Tony before proceeding:
 ```
 → My understanding of this project: [summary]
 → Correct me if I'm wrong before I start working.
@@ -519,10 +511,45 @@ When starting work on a NEW project or codebase for the first time:
 
 ---
 
+## Output Standards
+
+### Code Quality
+
+- No bloated abstractions
+- No premature generalization
+- No clever tricks without comments explaining why
+- Consistent style with existing codebase
+- Meaningful variable names (no `temp`, `data`, `result` without context)
+
+### Communication
+
+- Be direct about problems
+- Quantify when possible ("this adds ~200ms latency" not "this might be slower")
+- When stuck, say so and describe what you've tried
+- Don't hide uncertainty behind confident language
+- Explanations come BEFORE code blocks (Tony listens to audio playback — no surprises)
+
+### Change Description
+
+After any modification, summarize:
+
+```
+CHANGES MADE:
+- [file]: [what changed and why]
+
+THINGS I DIDN'T TOUCH:
+- [file]: [intentionally left alone because...]
+
+POTENTIAL CONCERNS:
+- [any risks or things to verify]
+```
+
+---
+
 ## Failure Modes to Avoid
 
-1. **Skipping the planning step** — jumping straight to code without a plan
-2. Displaying a plan in chat before writing it to the session file
+1. **Skipping Plan Mode** — jumping straight to code without planning
+2. Displaying a plan in CLI before writing it to the session file
 3. Making wrong assumptions without checking
 4. Not managing your own confusion
 5. Not seeking clarifications when needed
@@ -549,8 +576,7 @@ When starting work on a NEW project or codebase for the first time:
 ### Preferences
 
 - **Build First, Refactor Later:** Get things working before optimizing
-- **Eyesight-Aware:** Explanations ALWAYS come before code blocks
-  (for audio playback during eye rest — no surprises)
+- **Eyesight-Aware:** Explanations ALWAYS come before code blocks (for audio playback during eye rest — no surprises)
 - **Minimal & Purposeful Code:** Only include what has changed unless explicitly asked
 - **App Router Only (Next.js 13-15):** No `getStaticProps`, `getServerSideProps`
 - **Zustand for State:** Not Redux, not Context API sprawl
@@ -572,6 +598,7 @@ When starting work on a NEW project or codebase for the first time:
 > "I refuse to move forward when all the features are not humming along perfectly."
 
 If the coupon block is failing, we don't work on the order flow. Fix what's broken first.
+Always.
 
 ---
 
@@ -588,7 +615,7 @@ If the coupon block is failing, we don't work on the order flow. Fix what's brok
 | Infrastructure | Cloud Run, GCS, Vercel, DigitalOcean (staging) |
 | Testing | pytest (Python — clean venv required), Vitest (TypeScript) |
 | Python Setup | requirements.txt + venv + pip (no Poetry/pyproject.toml) |
-| State (dev rigs) | Flat JSON files — no database for local tools |
+| State (dev rigs) | Flat JSON files (`projects.json`) — no database for local tools |
 | UI (dev rigs) | Streamlit — all calls go through HTTP to FastAPI, no direct imports |
 
 ### Auth Model
@@ -612,44 +639,15 @@ If the coupon block is failing, we don't work on the order flow. Fix what's brok
 - All env vars via `config_service.py` — never call `os.getenv()` directly
 - All logging via `logging_service.py` — never call `logging.getLogger()` directly
 - All external API calls via service layer — routes call services, never SDKs directly
-- Derived fields (like `doc_count`): always compute from source — never manually set
+- `doc_count` and similar derived fields: always compute from source — never manually set
 - Status enums: frozen — never invent new values not in DATA_CONTRACT
 
----
+### Google File Search API Patterns
 
-## Windsurf-Specific Notes
-
-### Cascade Capabilities and Discipline
-
-Cascade can read the entire codebase — use this for context gathering during planning.
-Cascade can execute terminal commands — always ask before running destructive commands.
-Cascade can create and edit multiple files in one pass — this makes scope discipline
-MORE important, not less. More power = more responsibility to stay in bounds.
-
-### No Mechanical Plan Mode
-
-Windsurf does not have a `EnterPlanMode` tool like Claude Code. There is no harness that
-physically removes your write access during planning. This means:
-
-- You must enforce the planning discipline yourself
-- The session file write is your substitute mechanical anchor
-- Tony's approval is the only gate between planning and execution
-- If you skip the plan → you are operating on trust alone → trust breaks
-
-### The Behavioral Contract
-
-Because Windsurf cannot enforce planning architecturally, you must operate as if the
-constraint is internal rather than external. The rules do not change. Only the enforcement
-mechanism changes — from architectural to behavioral.
-
-> **Behave as if your write tools are locked until Tony says "approved."**
-
-### File Naming
-
-Windsurf looks for `.windsurfrules` in the project root. Name this file:
-```
-.windsurfrules
-```
+- Always `config={'force': True}` when deleting documents
+- Upload is async — always poll `operation.done` with timeout enforcement
+- Retrieval is implicit — Gemini decides when to use the tool
+- SDK ground truth lives in `reference/` — do not use web docs
 
 ---
 
@@ -660,12 +658,12 @@ When updating any documentation or playbook file:
 1. Add an entry to `CHANGELOG.md` in the repo root:
 
 ```markdown
-## YYYY-MM-DD HH:MM UTC — [WS] Windsurf
+## YYYY-MM-DD HH:MM UTC — [CC] Claude Code
 - **Updated:** `filename.md` — [what changed and why]
 - **Reason:** [what triggered this update]
 ```
 
-2. Use `[WS]` for Windsurf changes, `[TS]` for Tony Stark manual edits.
+2. Use `[CC]` for Claude Code changes, `[TS]` for Tony Stark manual edits.
 3. Keep entries concise — one line per file changed.
 
 ---
@@ -684,4 +682,4 @@ Every time. No exceptions.**
 ---
 
 *Part of the AI App Factory documentation suite.*
-*Version: 2.0 | March 2026*
+*Version: 3.0 | March 2026*
