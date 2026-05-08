@@ -11,6 +11,7 @@ import {
   applyCoupon,
   calculateCouponDiscount,
   validateCoupon,
+  validateCouponForDealer,
 } from "@/lib/couponUtils";
 
 interface CheckoutStore {
@@ -27,6 +28,7 @@ interface CheckoutStore {
   calculateTotals: () => void;
   resetCheckout: () => void;
   applyCoupon: (coupon: Coupon) => void;
+  applyCouponForDealer: (coupon: Coupon) => void;
   removeCoupon: () => void;
   billingSameAsShipping: boolean; // Default: billing is same as shipping
   setBillingSameAsShipping: (value: boolean) => void;
@@ -233,6 +235,44 @@ export const useCheckoutStore = create<CheckoutStore>()(
         set({ checkoutData: newTotals });
 
         console.log("After applying coupon:", get().checkoutData.coupon);
+      },
+
+      /**
+       * Apply a coupon from the dealer landing page (lenient — skips the
+       * email/zip/allow-list/per-user-limit checks because those data points
+       * are not yet entered at landing time). Same success/failure shape
+       * as applyCoupon. The full applyCoupon still gates checkout.
+       */
+      applyCouponForDealer: (coupon) => {
+        const { checkoutData } = get();
+
+        console.log(
+          "Before applying dealer coupon:",
+          get().checkoutData.coupon
+        );
+
+        const { isValid, message } = validateCouponForDealer(
+          coupon,
+          checkoutData
+        );
+        if (!isValid) {
+          console.warn("Invalid dealer coupon:", message);
+          return;
+        }
+
+        const updatedCheckoutData = {
+          ...checkoutData,
+          coupon,
+        };
+
+        const newTotals = updateCheckoutTotals(updatedCheckoutData);
+
+        set({ checkoutData: newTotals });
+
+        console.log(
+          "After applying dealer coupon:",
+          get().checkoutData.coupon
+        );
       },
 
       // removeCoupon: () =>

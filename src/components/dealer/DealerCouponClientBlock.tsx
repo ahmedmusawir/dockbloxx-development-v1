@@ -25,7 +25,9 @@ const DealerCouponClientBlock = ({ data }: Props) => {
   >("idle");
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
 
-  const applyCouponToStore = useCheckoutStore((state) => state.applyCoupon);
+  const applyCouponToStore = useCheckoutStore(
+    (state) => state.applyCouponForDealer
+  );
 
   if (status === "idle" && !couponCode) {
     return (

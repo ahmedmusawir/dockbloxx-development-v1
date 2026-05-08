@@ -249,72 +249,29 @@ export function isCouponExpiredByTimezone(
  */
 
 /**
- * Validates a coupon based on expiry date, min/max spend, and product/category restrictions.
- * @param coupon - The coupon object from the available coupon list.
- * @param checkoutData - Current checkout state (cart, subtotal, shipping, etc.).
- * @returns {boolean} - Returns true if the coupon is valid, otherwise false.
+ * Private helper: runs the validation rules shared between validateCoupon
+ * (used at checkout) and validateCouponForDealer (used on the dealer landing
+ * page). Covers rules 2 (100% free quantity cap), 2.2 (timezone-aware expiry),
+ * 3 (min/max spend), 4 (product/category include/exclude), and 5 (global
+ * usage limit). User-specific rules (email require, zip require, allow-list,
+ * per-user usage limit) live in the calling functions, not here.
+ *
+ * Both callers must share this helper so rules stay in sync.
  */
-export const validateCoupon = (
+const validateCouponSharedRules = (
   coupon: Coupon,
-  checkoutData: CheckoutData
+  checkoutData: CheckoutData,
+  meta: CouponMeta
 ): { isValid: boolean; message: string } => {
-  const meta = parseCouponMeta(coupon);
-  const userEmail = checkoutData.billing.email?.trim().toLowerCase();
-  const userZipCode = checkoutData.shipping.postcode?.trim();
-
-  console.log("--- [COUPON VALIDATION TRACE] ---");
-  console.log("Coupon Code:", coupon.code);
-  console.log("User Email:", userEmail);
-  console.log("User Zip Code:", userZipCode);
-  console.log("Allowed Emails from Meta:", meta.allowedEmails);
-
-  // 0. REQUIRE EMAIL (Security Check)
-  if (!userEmail) {
-    console.log("Validation FAILED: No email provided.");
-    return {
-      isValid: false,
-      message: "Please enter your email address to apply a coupon.",
-    };
-  }
-
-  // 0.1 REQUIRE ZIP CODE (Shipping Check)
-  if (!userZipCode) {
-    console.log("Validation FAILED: No zip code provided.");
-    return {
-      isValid: false,
-      message: "Please enter your shipping zip code to apply a coupon.",
-    };
-  }
-
-  // 1. Email Restriction Check (If coupon has specific allowed emails)
-  if (meta.allowedEmails && meta.allowedEmails.length > 0) {
-    const isMatch = meta.allowedEmails.includes(userEmail);
-    console.log("Email check result - Is Match:", isMatch);
-
-    if (!isMatch) {
-      console.log("Validation FAILED: Email not on allowed list.");
-      return {
-        isValid: false,
-        message: "This coupon is restricted to specific users.",
-      };
-    }
-  }
-
-  // --- START: UPGRADED LOGIC FOR QUANTITY LIMIT ---
-
   // 2. If it's a 100% "FREE" coupon, check the TOTAL quantity of eligible items.
   if (meta.percentPerProduct === 100) {
-    // Find all items in the cart that are eligible for this coupon
     const eligibleItems = checkoutData.cartItems.filter((item) =>
       coupon.products_included.includes(item.id)
     );
-
-    // Calculate the total quantity of these eligible items
     const totalEligibleQuantity = eligibleItems.reduce(
       (sum, item) => sum + item.quantity,
       0
     );
-
     if (totalEligibleQuantity > 1) {
       console.warn(
         `Coupon ${coupon.code} cannot be applied. Total quantity of eligible free items is ${totalEligibleQuantity}.`
@@ -325,8 +282,6 @@ export const validateCoupon = (
       };
     }
   }
-
-  // --- END: UPGRADED LOGIC ---
 
   // 2.2 Expiration Check (Timezone-Aware)
   if (isCouponExpiredByTimezone(coupon, meta)) {
@@ -422,6 +377,67 @@ export const validateCoupon = (
     };
   }
 
+  return { isValid: true, message: "" };
+};
+
+/**
+ * Validates a coupon based on expiry date, min/max spend, and product/category restrictions.
+ * @param coupon - The coupon object from the available coupon list.
+ * @param checkoutData - Current checkout state (cart, subtotal, shipping, etc.).
+ * @returns {boolean} - Returns true if the coupon is valid, otherwise false.
+ */
+export const validateCoupon = (
+  coupon: Coupon,
+  checkoutData: CheckoutData
+): { isValid: boolean; message: string } => {
+  const meta = parseCouponMeta(coupon);
+  const userEmail = checkoutData.billing.email?.trim().toLowerCase();
+  const userZipCode = checkoutData.shipping.postcode?.trim();
+
+  console.log("--- [COUPON VALIDATION TRACE] ---");
+  console.log("Coupon Code:", coupon.code);
+  console.log("User Email:", userEmail);
+  console.log("User Zip Code:", userZipCode);
+  console.log("Allowed Emails from Meta:", meta.allowedEmails);
+
+  // 0. REQUIRE EMAIL (Security Check)
+  if (!userEmail) {
+    console.log("Validation FAILED: No email provided.");
+    return {
+      isValid: false,
+      message: "Please enter your email address to apply a coupon.",
+    };
+  }
+
+  // 0.1 REQUIRE ZIP CODE (Shipping Check)
+  if (!userZipCode) {
+    console.log("Validation FAILED: No zip code provided.");
+    return {
+      isValid: false,
+      message: "Please enter your shipping zip code to apply a coupon.",
+    };
+  }
+
+  // 1. Email Restriction Check (If coupon has specific allowed emails)
+  if (meta.allowedEmails && meta.allowedEmails.length > 0) {
+    const isMatch = meta.allowedEmails.includes(userEmail);
+    console.log("Email check result - Is Match:", isMatch);
+
+    if (!isMatch) {
+      console.log("Validation FAILED: Email not on allowed list.");
+      return {
+        isValid: false,
+        message: "This coupon is restricted to specific users.",
+      };
+    }
+  }
+
+  // Rules 2 (100% free quantity cap), 2.2 (expiry), 3 (min/max spend),
+  // 4 (product/category include/exclude), 5 (global usage limit) — shared
+  // with validateCouponForDealer via validateCouponSharedRules.
+  const sharedResult = validateCouponSharedRules(coupon, checkoutData, meta);
+  if (!sharedResult.isValid) return sharedResult;
+
   // 6. Validate per-user usage limit
   // const userEmail = checkoutData.billing.email.trim().toLowerCase();
   const userUsageCount = coupon.used_by.filter(
@@ -443,6 +459,32 @@ export const validateCoupon = (
   }
 
   return { isValid: true, message: "" };
+};
+
+/**
+ * Lenient coupon validator used ONLY for the dealer landing page coupon
+ * auto-apply (`/dealer-coupon/[dealerSlug]/?coupon=...`).
+ *
+ * Skips:
+ *   - Rule 0   (require email)         — email not yet entered at landing
+ *   - Rule 0.1 (require zip code)      — zip not yet entered at landing
+ *   - Rule 1   (email allow-list)      — no email to match against yet
+ *   - Rule 6   (per-user usage limit)  — cannot evaluate without an email
+ *
+ * Runs all other rules (2 quantity cap, 2.2 timezone-aware expiry,
+ * 3 min/max spend, 4 product/category include/exclude, 5 global usage
+ * limit) via the shared helper validateCouponSharedRules — so any future
+ * change to those rules in validateCoupon automatically applies here too.
+ *
+ * The full validateCoupon still gates the checkout-page Apply button —
+ * strict rules apply there.
+ */
+export const validateCouponForDealer = (
+  coupon: Coupon,
+  checkoutData: CheckoutData
+): { isValid: boolean; message: string } => {
+  const meta = parseCouponMeta(coupon);
+  return validateCouponSharedRules(coupon, checkoutData, meta);
 };
 
 /**
