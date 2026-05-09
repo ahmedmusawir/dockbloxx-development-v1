@@ -35,7 +35,7 @@ const ShippingInfo = () => {
 
     const { local_pickup_zipcodes, flat_rates, is_free_shipping_for_local } =
       data;
-    let methods: string[] = [];
+    const methods: string[] = [];
     const isValidZip = /^\d{5}$/.test(shipping.postcode);
 
     if (!isValidZip) {

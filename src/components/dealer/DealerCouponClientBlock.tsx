@@ -29,16 +29,6 @@ const DealerCouponClientBlock = ({ data }: Props) => {
     (state) => state.applyCouponForDealer
   );
 
-  if (status === "idle" && !couponCode) {
-    return (
-      <div className="mx-auto max-w-7xl px-10 py-24 border-4 text-center my-5">
-        <h2 className="text-3xl font-semibold text-orange-500">
-          Missing coupon code.
-        </h2>
-      </div>
-    );
-  }
-
   useEffect(() => {
     const applyCouponFromURL = async () => {
       if (!couponCode) return;
@@ -55,6 +45,16 @@ const DealerCouponClientBlock = ({ data }: Props) => {
 
     applyCouponFromURL();
   }, [couponCode, applyCouponToStore]);
+
+  if (status === "idle" && !couponCode) {
+    return (
+      <div className="mx-auto max-w-7xl px-10 py-24 border-4 text-center my-5">
+        <h2 className="text-3xl font-semibold text-orange-500">
+          Missing coupon code.
+        </h2>
+      </div>
+    );
+  }
 
   if (status === "loading") {
     return (

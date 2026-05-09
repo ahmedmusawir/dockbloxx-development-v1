@@ -39,7 +39,7 @@ const BuildABloxxPageContent = () => {
             Build-a-Bloxx
           </h2>
           <p className="text-gray-600 max-w-3xl mx-auto">
-            If you don't see exactly what you are looking for, contact us and we
+            If you don&apos;t see exactly what you are looking for, contact us and we
             will be happy to help you get what you want!
           </p>
         </Row>

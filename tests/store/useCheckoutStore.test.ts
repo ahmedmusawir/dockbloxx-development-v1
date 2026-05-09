@@ -266,3 +266,71 @@ describe("useCheckoutStore - Shipping Method Preservation", () => {
     expect(checkoutData.shippingCost).toBe(0);
   });
 });
+
+describe("useCheckoutStore - Apply Dealer Coupon", () => {
+  test("attaches a valid dealer coupon to the store", () => {
+    const coupon = createCoupon({ code: "DEAL10" });
+    const items = [createCartItem({ basePrice: 100, quantity: 1 })];
+
+    useCheckoutStore.getState().setCartItems(items);
+    useCheckoutStore.getState().applyCouponForDealer(coupon);
+
+    const { checkoutData } = useCheckoutStore.getState();
+    expect(checkoutData.coupon).not.toBeNull();
+    expect(checkoutData.coupon?.code).toBe("DEAL10");
+    // 10% percent coupon on $100 → $10 discount
+    expect(checkoutData.discountTotal).toBeCloseTo(10, 1);
+  });
+
+  test("silently rejects when validateCouponForDealer fails (expired coupon)", () => {
+    const expiredCoupon = createCoupon({
+      code: "EXPIRED",
+      expires_on: "2020-01-01",
+    });
+    const items = [createCartItem({ basePrice: 100, quantity: 1 })];
+    useCheckoutStore.getState().setCartItems(items);
+
+    const initialTotal = useCheckoutStore.getState().checkoutData.total;
+
+    const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+
+    useCheckoutStore.getState().applyCouponForDealer(expiredCoupon);
+
+    const { checkoutData } = useCheckoutStore.getState();
+    expect(checkoutData.coupon).toBeNull(); // unchanged from initial null
+    expect(checkoutData.total).toBe(initialTotal); // unchanged
+    expect(warnSpy).toHaveBeenCalledWith(
+      "Invalid dealer coupon:",
+      expect.stringMatching(/expired/i)
+    );
+
+    warnSpy.mockRestore();
+  });
+
+  test("applies dealer coupon successfully even when billing.email is empty (regression)", () => {
+    // This is the regression test that proves the dealer fix works.
+    // The original bug: applyCoupon (strict path) silently rejected the coupon
+    // because billing.email is empty at landing time. applyCouponForDealer must
+    // succeed in the same scenario.
+    useCheckoutStore.setState({
+      checkoutData: {
+        ...useCheckoutStore.getState().checkoutData,
+        billing: {
+          ...useCheckoutStore.getState().checkoutData.billing,
+          email: "",
+        },
+      },
+    });
+
+    const coupon = createCoupon({ code: "DEAL10" });
+    const items = [createCartItem({ basePrice: 100, quantity: 1 })];
+    useCheckoutStore.getState().setCartItems(items);
+
+    useCheckoutStore.getState().applyCouponForDealer(coupon);
+
+    const { checkoutData } = useCheckoutStore.getState();
+    expect(checkoutData.coupon).not.toBeNull();
+    expect(checkoutData.coupon?.code).toBe("DEAL10");
+    expect(checkoutData.billing.email).toBe(""); // confirm we didn't accidentally set it
+  });
+});

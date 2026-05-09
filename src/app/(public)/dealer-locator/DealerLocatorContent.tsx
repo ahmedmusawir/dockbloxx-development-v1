@@ -45,7 +45,7 @@ const DealerLocatorContent = () => {
             The Dealer List
           </h2>
           <p className="text-gray-600 max-w-3xl mx-auto mb-10">
-            If you don't see exactly what you are looking for, contact us and we
+            If you don&apos;t see exactly what you are looking for, contact us and we
             will help you locate the perfect DockBloxx dealer.
           </p>
 

@@ -538,7 +538,7 @@ const BloxxPricing = ({ onPriceChange, setCartItem }: BloxxPricingProps) => {
         </div>
         <div>
           <p className="mt-5">
-            Don't see your size?{" "}
+            Don&apos;t see your size?{" "}
             <Link href="/build-a-bloxx">
               <u>Click here</u>
             </Link>

@@ -79,7 +79,7 @@ const ApplyCoupon = () => {
         <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-none">
           <p className="text-sm text-blue-800">
             <strong>Dealer Coupon Detected!</strong> A coupon code has been pre-filled for you. 
-            Please click <strong>"Apply"</strong> to activate your discount.
+            Please click <strong>&quot;Apply&quot;</strong> to activate your discount.
           </p>
         </div>
       )}

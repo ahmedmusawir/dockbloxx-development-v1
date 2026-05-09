@@ -166,7 +166,7 @@ const SearchPageContent = ({
               {!isLoading && searchPerformed && (
                 <div>
                   <h2 className="text-2xl font-bold tracking-tight text-gray-900 mb-2">
-                    Search Results For "{currentQuery}"{" "}
+                    Search Results For &quot;{currentQuery}&quot;{" "}
                     {totalProducts > 0 ? `(${totalProducts})` : ""}{" "}
                     {/* Display total products count */}
                   </h2>
@@ -176,7 +176,7 @@ const SearchPageContent = ({
                     <SearchProductList products={searchResults} />
                   ) : (
                     // Message when search is performed but no results
-                    <p>No products found for "{currentQuery}".</p>
+                    <p>No products found for &quot;{currentQuery}&quot;.</p>
                   )}
                   {/* Pagination */}
                   {!isLoading && totalPages > 1 && (

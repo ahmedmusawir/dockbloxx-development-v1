@@ -52,7 +52,7 @@ const SearchPagination: React.FC<SearchPaginationProps> = ({
         1,
         currentPage - Math.floor(MAX_VISIBLE_PAGES / 2)
       );
-      let endPage = Math.min(totalPages, startPage + MAX_VISIBLE_PAGES - 1);
+      const endPage = Math.min(totalPages, startPage + MAX_VISIBLE_PAGES - 1);
 
       if (endPage - startPage + 1 < MAX_VISIBLE_PAGES) {
         startPage = Math.max(1, endPage - MAX_VISIBLE_PAGES + 1);

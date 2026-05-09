@@ -1,5 +1,5 @@
 # Recovery State
 
-Last action: ESLint configured with strict ruleset (`.eslintrc.json` extends `next/core-web-vitals` + `next/typescript`). Baseline lint run captured: 133 errors + 51 warnings across the codebase. No source files modified, no deps added. Triage report delivered to Tony.
-Pending: Tony deciding which lint warnings to address now vs defer. One real bug flagged for awareness — `DealerCouponClientBlock.tsx:42` rules-of-hooks violation (pre-existing, not from our dealer fix).
-Next step: Awaiting Tony's call on next move (lint cleanup task, dealer-fix manual test, commit, or new direction).
+Last action: 25 unit tests added across 2 test files (12 for `validateCouponForDealer`, 10 for `validateCoupon` strict path, 3 for `applyCouponForDealer` store action). All 146 tests pass. Playbook notes appended to `agent_docs/playbook-notes-block-2.md`.
+Pending: Tony reviewing. No commits yet.
+Next step: Awaiting Tony's call. Likely candidates: commit the test additions, address the `src/lib/test.ts` orphan flagged during the run, fix the place-order shadow-implementation, or new direction.

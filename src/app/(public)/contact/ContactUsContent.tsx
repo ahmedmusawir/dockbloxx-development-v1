@@ -79,7 +79,7 @@ const ContactUsContent = () => {
                 Get In Touch With DockBloxx
               </h2>
               <p className="text-gray-700 text-xl leading-relaxed mb-16">
-                At DockBloxx, we're committed to providing exceptional customer
+                At DockBloxx, we&apos;re committed to providing exceptional customer
                 service. Whether you have questions about our products or need
                 help choosing the perfect size, our customer satisfaction team
                 is here to help. Get in touch with us today and we will assist

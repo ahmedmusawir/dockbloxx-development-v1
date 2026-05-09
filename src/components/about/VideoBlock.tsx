@@ -35,7 +35,7 @@ const VideoBlock = () => {
               </Link>
             </p>
             <p className="text-gray-500 italic">
-              "There's a way to do it better. Find it." -Thomas Edison
+              &quot;There&apos;s a way to do it better. Find it.&quot; -Thomas Edison
             </p>
             <div>
               <Link

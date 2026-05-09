@@ -26,7 +26,7 @@ export function updateCheckoutTotals(checkoutData: CheckoutData): CheckoutData {
   // Initialize variables
   let discountTotal = 0;
   // Create a mutable copy of cartItems to add our 'isFree' flag
-  let updatedCartItems = [...checkoutData.cartItems].map((item) => ({
+  const updatedCartItems = [...checkoutData.cartItems].map((item) => ({
     ...item,
     isFree: false,
     discountApplied: 0,
