@@ -1,12 +1,33 @@
 /**
- * Unit tests for place-order API route
- * Tests the transformation of checkout data into WooCommerce order format.
- * Specifically tests the custom coupon logic (coupon_lines vs fee_lines).
+ * @jest-environment node
+ *
+ * Integration tests for place-order API route + the order transformation lib.
+ *
+ * The first 6 tests cover the transformation logic (now imported from the
+ * shared @/lib/orderTransform module instead of a shadow copy). Previously,
+ * a local buildOrderData() function in this file mimicked the route's
+ * transformation; it had drifted in 5 places. Block 4 Step 4D extracted the
+ * real logic into a lib that BOTH the route AND these tests import — no more
+ * shadow.
+ *
+ * Tests 7-12 cover the route handler itself (POST orchestration, Woo fetch,
+ * error handling) with global.fetch mocked. The route imports next/server
+ * which requires global Request/Response — hence the `@jest-environment node`
+ * docblock (Node 18+ provides them, jsdom doesn't).
  */
+
+jest.mock("@/constants/apiEndpoints", () => ({
+  WC_REST_URL: "https://test-wp.example/wp-json/wc/v3",
+}));
+
+process.env.WOOCOM_CONSUMER_KEY = "ck_test_key";
+process.env.WOOCOM_CONSUMER_SECRET = "cs_test_secret";
 
 import { CheckoutData } from "@/types/checkout";
 import { Coupon } from "@/types/coupon";
 import { CartItem } from "@/types/cart";
+import { buildOrderData } from "@/lib/orderTransform";
+import { POST } from "@/app/api/place-order/route";
 
 // Helper to create a minimal cart item
 function createCartItem(overrides: Partial<CartItem> = {}): CartItem {
@@ -66,69 +87,9 @@ function createCheckoutData(overrides: Partial<CheckoutData> = {}): CheckoutData
   };
 }
 
-// This function mimics the transformation logic in place-order/route.ts
-function buildOrderData(checkoutData: CheckoutData) {
-  const { parseCouponMeta } = require("@/lib/couponUtils");
-  
-  // Check if coupon is a custom per-product percentage type
-  const isCustomCoupon = checkoutData.coupon 
-    ? parseCouponMeta(checkoutData.coupon).percentPerProduct !== undefined
-    : false;
-
-  return {
-    payment_method: checkoutData.paymentMethod,
-    payment_method_title: "Online Payment",
-    billing: checkoutData.billing,
-    shipping: checkoutData.shipping,
-    customer_note: checkoutData.customerNote,
-    line_items: checkoutData.cartItems.map((item: any) => ({
-      product_id: item.id,
-      quantity: item.quantity,
-      variation_id: item.variation_id || 0,
-      meta_data: [
-        {
-          key: "variations",
-          value: item.variations || [],
-        },
-        {
-          key: "metadata",
-          value: item.metadata || {},
-        },
-      ],
-    })),
-    shipping_lines: [
-      {
-        method_id: checkoutData.shippingMethod,
-        method_title:
-          checkoutData.shippingMethod === "free_shipping"
-            ? "Free Shipping"
-            : checkoutData.shippingMethod === "local_pickup"
-            ? "Local Pickup"
-            : "Flat Rate",
-        total: checkoutData.shippingCost.toFixed(2),
-      },
-    ],
-    // Only send coupon to WooCommerce if it's a STANDARD coupon type
-    coupon_lines: checkoutData.coupon && !isCustomCoupon
-      ? [
-          {
-            code: checkoutData.coupon.code,
-            used_by: checkoutData.billing.email,
-          },
-        ]
-      : [],
-    // For custom coupons, add discount as a negative fee line
-    fee_lines: checkoutData.coupon && isCustomCoupon && checkoutData.discountTotal > 0
-      ? [
-          {
-            name: `Coupon: ${checkoutData.coupon.code}`,
-            total: `-${checkoutData.discountTotal.toFixed(2)}`,
-            tax_status: "none",
-          },
-        ]
-      : [],
-  };
-}
+// Local buildOrderData mimic removed 2026-05-11. Replaced with import of the
+// real lib at the top of this file (see Block 4 Step 4D in playbook notes for
+// the full shadow-implementation-fix story).
 
 describe("place-order API - Standard Coupon (QUICK10)", () => {
   test("standard cart discount goes to coupon_lines", () => {
@@ -365,5 +326,203 @@ describe("place-order API - Fixed Product Discount (15BANJO)", () => {
     expect(orderData.coupon_lines).toHaveLength(1);
     expect(orderData.coupon_lines[0].code).toBe("15BANJO");
     expect(orderData.fee_lines).toHaveLength(0);
+  });
+});
+
+// --- ROUTE-HANDLER INTEGRATION TESTS -----------------------------------------
+//
+// Tests 7-12 exercise the POST handler end-to-end with global.fetch mocked.
+// These cover the orchestration layer (validation → fetch → response) that
+// the previous 6 lib tests don't touch.
+
+function makePostRequest(body: unknown) {
+  return new Request("http://localhost:3000/api/place-order", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
+function mockWooResponse(body: unknown, opts: { ok?: boolean; status?: number } = {}) {
+  return {
+    ok: opts.ok ?? true,
+    status: opts.status ?? 200,
+    json: () => Promise.resolve(body),
+    headers: new Headers(),
+  } as unknown as Response;
+}
+
+describe("POST /api/place-order — route handler", () => {
+  const originalFetch = global.fetch;
+
+  beforeEach(() => {
+    global.fetch = jest.fn();
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+    jest.resetAllMocks();
+  });
+
+  test("POST returns order data when Woo creates order", async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce(
+      mockWooResponse({
+        id: 12345,
+        status: "pending",
+        total: "119.00",
+        discount_total: "0",
+        line_items: [],
+      })
+    );
+
+    const checkoutData = createCheckoutData();
+    const response = await POST(makePostRequest(checkoutData));
+    const data = await response.json();
+
+    // Route returns 201 on success (NextResponse.json(data, { status: 201 }))
+    expect(response.status).toBe(201);
+    expect(data.id).toBe(12345);
+
+    // Fetch was called with the Woo orders endpoint.
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+    const callUrl = (global.fetch as jest.Mock).mock.calls[0][0] as string;
+    expect(callUrl).toContain("/orders");
+
+    // Sanity check: the body sent to Woo is the transformed order shape.
+    const fetchOptions = (global.fetch as jest.Mock).mock.calls[0][1];
+    const sentBody = JSON.parse(fetchOptions.body);
+    expect(sentBody.payment_method).toBe("stripe");
+    expect(sentBody.line_items).toBeDefined();
+    expect(sentBody.billing).toBeDefined();
+  });
+
+  test("POST returns 400 when required fields missing", async () => {
+    // Omit billing — route's validation guard should fire before any fetch.
+    const incomplete = {
+      paymentMethod: "stripe",
+      shipping: createCheckoutData().shipping,
+      cartItems: [createCartItem()],
+      customerNote: "",
+      shippingMethod: "flat_rate",
+      shippingCost: 0,
+      subtotal: 119,
+      discountTotal: 0,
+      taxTotal: 0,
+      total: 129,
+      coupon: null,
+      // billing intentionally omitted
+    };
+
+    const response = await POST(makePostRequest(incomplete));
+    const data = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(data.error).toMatch(/missing required/i);
+
+    // Critical: with invalid payload, the route MUST NOT hit Woo.
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  test("POST returns Woo status with generic message when Woo fails (no internal details leaked)", async () => {
+    // Woo returns a 400 with a body that contains a customer email and an
+    // internal error code — exactly the kind of leak Finding #3 fixed.
+    (global.fetch as jest.Mock).mockResolvedValueOnce(
+      mockWooResponse(
+        {
+          code: "woocommerce_rest_invalid_required_param",
+          message: "Customer email customer@example.com is invalid",
+        },
+        { ok: false, status: 400 }
+      )
+    );
+
+    const response = await POST(makePostRequest(createCheckoutData()));
+    const data = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(data.error).toBe("Failed to create order. Please try again.");
+
+    // Defensive — none of the Woo internals leak through the response.
+    const responseText = JSON.stringify(data);
+    expect(responseText).not.toMatch(/customer@example\.com/);
+    expect(responseText).not.toMatch(/woocommerce_rest_invalid_required_param/);
+    expect(data.details).toBeUndefined();
+  });
+
+  test("POST returns 500 when Woo fetch throws", async () => {
+    (global.fetch as jest.Mock).mockRejectedValueOnce(
+      new Error("network failure")
+    );
+
+    const response = await POST(makePostRequest(createCheckoutData()));
+    const data = await response.json();
+
+    expect(response.status).toBe(500);
+    expect(data.error).toBeDefined();
+    // Defensive — the network error string must not appear in the client response.
+    expect(JSON.stringify(data)).not.toMatch(/network failure/);
+  });
+
+  test("flattens line_item customFields into meta_data (Build-a-Bloxx engraving)", async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce(
+      mockWooResponse({ id: 12345, line_items: [] })
+    );
+
+    // This is the customFields path the shadow-impl mimic was missing entirely
+    // (Block 2 audit Finding "Drift #3"). Production Build-a-Bloxx orders with
+    // engraving text used this path; tests had zero coverage of it.
+    const checkoutData = createCheckoutData({
+      cartItems: [
+        createCartItem({
+          customFields: [
+            { name: "engraving_text", value: "Happy Birthday Mom" },
+            { name: "engraving_font", value: "Script" },
+          ],
+        } as Partial<CartItem>),
+      ],
+    });
+
+    await POST(makePostRequest(checkoutData));
+
+    const fetchOptions = (global.fetch as jest.Mock).mock.calls[0][1];
+    const sentBody = JSON.parse(fetchOptions.body);
+    const metaData = sentBody.line_items[0].meta_data;
+
+    // Always-present base meta entries.
+    expect(metaData).toContainEqual(
+      expect.objectContaining({ key: "variations" })
+    );
+    expect(metaData).toContainEqual(
+      expect.objectContaining({ key: "metadata" })
+    );
+
+    // Custom fields flattened into individual entries — the real production
+    // contract Build-a-Bloxx admin tooling depends on.
+    expect(metaData).toContainEqual({
+      key: "engraving_text",
+      value: "Happy Birthday Mom",
+    });
+    expect(metaData).toContainEqual({
+      key: "engraving_font",
+      value: "Script",
+    });
+  });
+
+  test("returns order id in response (route handler response shape)", async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce(
+      mockWooResponse({
+        id: 99999,
+        status: "pending",
+        total: "119.00",
+        discount_total: "0",
+        line_items: [],
+      })
+    );
+
+    const response = await POST(makePostRequest(createCheckoutData()));
+    const data = await response.json();
+
+    expect(response.status).toBe(201);
+    expect(data.id).toBe(99999);
   });
 });

@@ -58,7 +58,13 @@ export async function POST(request: Request) {
       customerId,
     });
   } catch (error: any) {
+    // Log full error details server-side for debugging
     console.error("Stripe Error:", error);
-    return NextResponse.json({ message: error.message }, { status: 500 });
+    // Return generic message to client — never leak Stripe internals
+    // (could contain card details, customer email, internal request IDs)
+    return NextResponse.json(
+      { message: "Failed to process payment. Please try again." },
+      { status: 500 }
+    );
   }
 }

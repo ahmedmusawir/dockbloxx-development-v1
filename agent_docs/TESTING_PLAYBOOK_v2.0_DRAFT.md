@@ -1,6 +1,6 @@
 # TESTING PLAYBOOK
 
-> **Version:** 2.0
+> **Version:** 2.0 DRAFT
 > **Date:** 2026-05-11
 > **Author:** Architect (Claude) — synthesis of v1.0 (StarkReads, 2026-05-03) + Dockbloxx field notes (Blocks 2/3/4, May 8–11)
 > **Origin:** Distilled from two production Next.js apps:
