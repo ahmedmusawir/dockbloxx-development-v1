@@ -4,7 +4,15 @@ module.exports = {
    * Sets up JSDOM as the test environment for browser-like DOM in React tests.
    */
   testEnvironment: "jsdom",
-  
+
+  /**
+   * Exclude Playwright E2E specs from Jest's discovery. Playwright tests
+   * import from `@playwright/test` which throws at module load if loaded
+   * by Jest. Without this, `npm test` reports "N suites failed" on the
+   * e2e/ specs while unit/integration tests still pass.
+   */
+  testPathIgnorePatterns: ["/node_modules/", "/e2e/"],
+
   /**
    * Transform TypeScript and TSX files with ts-jest
    */

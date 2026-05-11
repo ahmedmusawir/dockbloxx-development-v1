@@ -106,7 +106,11 @@ export async function GET(request: Request) {
     }
 
     const products = await productsResponse.json();
-    return NextResponse.json({ products }, { status: 200 });
+    const total = parseInt(
+      productsResponse.headers.get("X-WP-Total") || "0",
+      10
+    );
+    return NextResponse.json({ products, total }, { status: 200 });
   } catch (error) {
     console.error("[API Route] Internal Server Error:", error);
     return NextResponse.json(

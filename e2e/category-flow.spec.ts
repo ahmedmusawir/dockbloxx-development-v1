@@ -14,10 +14,6 @@ const liveData = JSON.parse(
   fs.readFileSync(path.join(FIXTURES_DIR, "live-data.json"), "utf-8")
 );
 
-const PAGINATION_THRESHOLD = 12; // products per page on category routes
-const HAS_PAGINATION =
-  liveData.categories.populated.product_count > PAGINATION_THRESHOLD;
-
 test.describe("Category flow", () => {
   test("category page renders products", async ({ page }) => {
     const categorySlug = liveData.categories.populated.slug;
@@ -30,21 +26,28 @@ test.describe("Category flow", () => {
     expect(page.url()).toContain(`/category/${categorySlug}`);
   });
 
+  // Un-skipped 2026-05-11 after the /api/products-by-category fix made
+  // totalPages compute correctly from X-WP-Total. Pre-fix, total was always
+  // undefined (frontend fell back to products.length, giving totalPages=1),
+  // so NumberedPagination rendered no numeric page buttons. Post-fix,
+  // total reflects the true count from X-WP-Total, so totalPages > 1 for
+  // any category with >12 products and the "2" button renders.
+  //
+  // This test asserts that button's visibility — the most direct regression
+  // signal for the bug. (The discovered "populated" category currently has
+  // 23 products → 2 pages at 12/page. If a future fixture run yields a
+  // category with <13 products, this test will need a stronger fixture
+  // or to be conditionally skipped again.)
   test("category pagination works", async ({ page }) => {
-    test.skip(
-      !HAS_PAGINATION,
-      `skipped: dev category has <${PAGINATION_THRESHOLD + 1} products, can't test pagination`
-    );
-
     const categorySlug = liveData.categories.populated.slug;
     await page.goto(`/category/${categorySlug}`);
     await expect(page.locator("h3").first()).toBeVisible();
-    const page1FirstName = await page.locator("h3").first().textContent();
 
-    await page.goto(`/category/${categorySlug}?page=2`);
-    await expect(page.locator("h3").first()).toBeVisible();
-    const page2FirstName = await page.locator("h3").first().textContent();
-
-    expect(page2FirstName).not.toBe(page1FirstName);
+    // Page-2 numeric button is visible — proves NumberedPagination saw
+    // totalPages > 1, which only happens when the API returned a correct
+    // `total` field from the X-WP-Total header.
+    await expect(
+      page.getByRole("button", { name: "2", exact: true })
+    ).toBeVisible();
   });
 });

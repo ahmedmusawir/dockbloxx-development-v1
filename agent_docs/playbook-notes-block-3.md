@@ -558,3 +558,71 @@ The earlier debugging detour (attribution-script race) cost half a day. Once env
 ---
 
 *Block 3 closed 2026-05-09. Block 4 (Stripe integration tests, mocked SDK) opens in a fresh session.*
+
+---
+
+## 2026-05-11 ADDENDUM — Two bugs uncovered + locked in
+
+Captured after Block 3 closed. The first principle below is REST-pagination architecture; the second is Jest/Playwright runner-coexistence. Both surfaced in one diagnostic recon session and were fixed surgically with regression coverage added.
+
+### PRINCIPLE — REST APIs often return counts in HEADERS, not body
+
+**The bug shape.** A frontend that paginates needs a total count to compute "how many pages exist?" If the API returns only the current page of records and no total, the frontend either renders 1 page (if it falls back to `products.length`) or renders no pagination at all. The classic anti-pattern is computing `totalPages = Math.ceil(items.length / pageSize)` — that gives you `1` for every page, because `items.length === pageSize` until the last page.
+
+**The Woo case.** WooCommerce REST returns total record counts in the `X-WP-Total` HTTP header, not in the response body. The body is just the items. To get the count, you must read `response.headers.get("X-WP-Total")`.
+
+**The bug we fixed.** `src/app/api/products-by-category/route.ts` was returning `{ products }` and discarding the `X-WP-Total` header. `/category/accessories` showed 12 of 23 products with no page 2 button. Fix was 4 lines — add `parseInt(productsResponse.headers.get("X-WP-Total") || "0", 10)` and include in the response as `total`. Frontend was already reading `data.total` correctly; it just always got `undefined` and fell back to `products.length`.
+
+**The lesson, generalized.**
+- Whenever you proxy a paginated REST API, ALWAYS check whether totals live in headers vs body. Common patterns:
+  - **WordPress / WP REST API / WooCommerce / WPGraphQL bridge:** `X-WP-Total` + `X-WP-TotalPages` headers.
+  - **GitHub REST:** `Link` header with `rel="next" / rel="last"` cursor URLs (no count, count must be derived from `rel="last"`).
+  - **Stripe:** `has_more: boolean` in body (cursor-style).
+  - **Shopify:** `Link` header with cursor pagination.
+  - **Generic Laravel API pagination:** `meta.total` in body.
+- Always READ the upstream API docs for pagination shape before writing the proxy.
+- ALWAYS test with the real third page of data, not just page 1 — page 1 will lie to you. The first time you set `page=2` is the first time you find out your total is wrong.
+
+**Test pattern that locks this in.** Mock `global.fetch` to return a controlled `Response`-shaped object with explicit `headers` (use `new Headers({...})`). Assert against `data.total` from the route's JSON output. The 3-test minimum is:
+1. Happy path — header present, total correct.
+2. Header missing — total falls back to 0 (or whatever the safe default is).
+3. Upstream lookup fails — appropriate error shape (e.g., category not found).
+
+See `tests/api/products-by-category.test.ts` for the concrete pattern.
+
+**GENERALIZABLE.**
+
+### PRINCIPLE — Jest `testPathIgnorePatterns` matters when mixing test runners
+
+**The bug shape.** A project using both Jest (unit/integration) and Playwright (E2E) has TWO test-file populations: `*.test.ts` for Jest, `*.spec.ts` for Playwright. Jest's default file discovery matches BOTH globs (per Jest docs: `**/*.+(spec|test).+(ts|tsx|js)`). So unless you tell Jest to skip the Playwright directory, Jest will scoop up the `.spec.ts` files, attempt to load them, and fail at module-load time when `@playwright/test`'s runtime detects it's been imported by Jest.
+
+**The symptom — and why it's confusing.** `npm test` reports something like:
+```
+Test Suites: 5 failed, 12 passed, 17 total
+Tests:       146 passed, 146 total
+```
+Five **suites** fail, but zero **tests** fail. That mismatch is the tell — when Jest can't load a file, it reports a suite failure with no tests inside. Easy to misread as "the tests are passing, just some weird CI noise." It's not — those are real Jest errors at import time. Playwright's own runtime even prints a helpful error message: *"Playwright Test needs to be invoked via 'npx playwright test' and excluded from Jest test runs."*
+
+**The fix.** One line in `jest.config.js`:
+```js
+testPathIgnorePatterns: ["/node_modules/", "/e2e/"],
+```
+(Or whatever directory holds your Playwright specs — `/playwright/`, `/tests-e2e/`, etc.)
+
+**The lesson, generalized.**
+- Any project mixing two test runners needs explicit ignore patterns in BOTH configs:
+  - Jest's `testPathIgnorePatterns` to exclude the Playwright directory.
+  - Playwright's `testDir` should scope to only the Playwright directory (which we already had — `testDir: './e2e'`).
+- When you see "N suites failed, 0 tests failed" — check `testPathIgnorePatterns` first. This is the canonical symptom of runner cross-contamination.
+- `*.spec.ts` is the universal Playwright convention, but it's also a valid Jest pattern. The collision is by default. Always-exclude is the safer default than always-include.
+- v1.0 playbook's `jest.config.js` has `testPathIgnorePatterns: ['/node_modules/', '/.next/', '<rootDir>/src/__tests__/jest.setup.ts']` — note the v1.0 example doesn't include the Playwright dir because v1.0's setup used `roots: ['<rootDir>/src']` which scoped Jest's discovery away from `e2e/` at the root. Either approach works (roots OR ignore patterns); using both is belt-and-suspenders.
+
+**Diagnostic recipe for "N suites failed, 0 tests failed":**
+1. Look at one of the failing suite error messages. Does it say "Playwright Test needs to be invoked via 'npx playwright test'"? If yes — `testPathIgnorePatterns` is missing.
+2. If the error is something else, look for module-load errors specific to a different test runner mixed in.
+
+**GENERALIZABLE.**
+
+---
+
+*2026-05-11 addendum closes. Block 4 still pending in a fresh session.*
