@@ -28,12 +28,14 @@ import { fetchTrackingScripts } from "@/services/trackingSeoServices";
 
 const inter = Inter({ subsets: ["latin"] });
 
-export const stripScriptWrapper = (html: string): string => {
+export const stripScriptWrapper = (html: string | null): string => {
+  if (!html) return "";
   const match = html.match(/<script[^>]*>([\s\S]*?)<\/script>/i);
   return match ? match[1].trim() : html.trim();
 };
 
-export const stripNoscriptWrapper = (html: string): string => {
+export const stripNoscriptWrapper = (html: string | null): string => {
+  if (!html) return "";
   const match = html.match(/<noscript[^>]*>([\s\S]*?)<\/noscript>/i);
   return match ? match[1].trim() : html.trim();
 };
