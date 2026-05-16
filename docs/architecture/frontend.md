@@ -168,24 +168,6 @@ export const fetchBlogPosts = async (
 };
 ```
 
-### Alternative HTTP Client: Axios
-
-For complex requests requiring advanced features, **Axios** is available as a secondary option:
-
-```typescript
-// Used for specific WooCommerce API calls requiring authentication
-import axios from "axios";
-import { WC_REST_URL } from "@/constants/apiEndpoints";
-
-const wooCommerceClient = axios.create({
-  baseURL: WC_REST_URL, // Derived from NEXT_PUBLIC_BACKEND_URL via getApiUrl()
-  auth: {
-    username: process.env.WOOCOM_CONSUMER_KEY!,
-    password: process.env.WOOCOM_CONSUMER_SECRET!,
-  },
-});
-```
-
 ---
 
 ## Component Structure

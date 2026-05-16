@@ -1,6 +1,6 @@
 # Recovery State
 
-Last action: TESTING_PLAYBOOK v2.0 synthesis draft delivered at `agent_docs/TESTING_PLAYBOOK_v2.0_DRAFT.md` (1743 lines, ~1.57× v1.0 after Synthesis Notes stripped). 5 questions flagged for Tony + JARVIS review in the appendix.
-Earlier today: dealer + category bug fixes, ESLint pass, Block 4 integration tests (3 production security findings — 2 fixed, 1 OPEN), shadow-impl refactor of `/api/place-order`, CHANGELOG.md + v1.0.0 release boundary.
-Pending: Tony + JARVIS review of v2.0 draft. Decide on the 5 Synthesis Notes questions. Promote draft → canonical, archive v1.0.
-Next step: Awaiting Tony's call. Working tree dirty per no-commit rule — package.json (1.0.0), CHANGELOG.md (new), TESTING_PLAYBOOK_v2.0_DRAFT.md (new), `src/lib/orderTransform.ts` (new), 4 tests/api/ files, 4 src files modified, all playbook + companion docs in agent_docs/.
+Last action: `swiper@11.2.10 → swiper@12.1.4` migration complete. Critical prototype-pollution CVE eliminated. Tony verified the mobile product gallery (`/shop/life-saver`) on mobile + iPad-mini viewports — "looks perfect," no restyling required. `MobileProductSlider.tsx` source unchanged. Playbook updated with Case Study #2 (clean breaking-change migration when usage surface is small).
+Session arc: 25 vulns → `audit fix` → 4 → axios removal → 4 (-18 advisories from graph) → swiper@12 → **3 moderate, zero critical, zero high**.
+Pending: 3 moderate vulns remain — `brace-expansion` (transitive, trivial) and the `next/postcss` chain. The latter needs a proper Next.js patch/minor upgrade plan; never `audit fix --force` (would downgrade Next 15 → 9.3.3).
+Next step: Tony's call on whether to plan the Next upgrade now or stop the session here. Working tree dirty per no-commit rule.

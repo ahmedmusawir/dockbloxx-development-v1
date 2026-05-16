@@ -7,7 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+- **Upgraded `swiper` from `^11.2.5` (installed `11.2.10`) → `^12.1.4`** — eliminates critical prototype-pollution CVE (GHSA-hmx5-qpq5-p643), the last remaining critical advisory after the same-day axios cleanup. Swiper@12 is a breaking-change release; impact in this codebase was minimal because we only use the `Navigation` + `Thumbs` modules in a single component (`src/components/shop/product-page/mobile/MobileProductSlider.tsx`, mobile product gallery on `/shop/[slug]`). v12's main user-visible change (CSS-pseudo nav arrows → SVG icons) rendered cleanly without restyling — verified on mobile and iPad-mini viewports against `/shop/life-saver`. `npm audit` now reports 3 moderate vulns (down from 25 at session start, with 18 of those eliminated by the axios removal earlier in the day).
+
+### Removed
+
+- **`axios` dependency** — never imported in any source file; was the single biggest source of `npm audit` advisories (18 CVEs spanning SSRF, prototype pollution, credential leakage, CRLF injection, DoS). Removed via `npm uninstall axios`. Docs updated: deleted the "Alternative HTTP Client: Axios" example section in `docs/architecture/frontend.md` (it described aspirational use that was never adopted — project uses native `fetch()`).
+
 ### Added
+
+- **Cyber Repo Security Playbook v0.1** (`agent_docs/CYBER_REPO_SECURITY_PLAYBOOK.md`) — backend-agnostic, principle-first playbook for dependency CVE triage and cleanup. Seeded from the 2026-05-16 `npm audit` pass; documents the audit → fix → analyze → remove sequence, the `npm audit fix --force` Next.js downgrade trap, and skill-extraction candidates (`/audit-deps`, `/remove-unused-dep`, etc.). Companion to `agent_docs/SECURITY_FINDINGS.md` (which tracks app-level findings).
 
 - **Testing Playbook v2.0** (`agent_docs/TESTING_PLAYBOOK.md`) — multi-backend testing patterns codified for App Factory reuse. Generalizes v1.0's Supabase + Stripe patterns to be backend-agnostic at the principle level, with concrete implementations as appendix examples drawn from StarkReads (Supabase) and Dockbloxx (WooCommerce REST). v1.0 archived at `agent_docs/TESTING_PLAYBOOK_v1.0_ARCHIVE.md`. Synthesis decisions captured separately at `agent_docs/playbook-v2.0-synthesis-notes.md`.
 
