@@ -7,7 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Cyber Repo Security Playbook v0.5** *(2026-05-17)* — major expansion. Added **Phase 6** (Production propagation + pre-deploy verification) codifying the lockfile-copy → `npm ci` → build → eyeball workflow for shipping dep changes to the production/Vercel repo. Added a reusable **Pre-Deployment Eyeball Checklist** scoped to customer-facing storefronts (8 pages, viewport-specific, with a 5-minute speed-run option for time-constrained checks). New principle **P9** (production deployment requires lockfile propagation + `npm ci` + pre-deploy eyeball) anchors the new phase. Marked Case Studies #1→#4 as the **canonical end-to-end reference walkthrough** for App Factory replication: baseline → audit-fix → remove-unused → breaking-migration-with-visual-signoff → overrides-pattern → second-overrides-application → final 0-vuln state → propagation.
+
 ### Security
+
+- **Resolved `brace-expansion` CVEs (GHSA-v6h2-p8h4-qcjw, GHSA-f886-m6hf-6m8v) via npm `overrides`** *(2026-05-17)*. Same pattern as the postcss override below — added `"brace-expansion": "^2.0.2"` to the `overrides` block in `package.json`. The single vulnerable instance (`brace-expansion@1.1.11` pulled in by `eslint@8 → minimatch@3`) now resolves to `2.1.0` along with the 7 already-safe nested copies. The proper structural fix (upgrading to `eslint@9` flat config) is a separate breaking-change migration; the override is the targeted CVE-cleanup. Verified: `npm audit` reports **0 vulnerabilities**, build clean, full test suite green (Jest 166/166, Playwright 16/16). **Final session posture across two days: 25 vulns → 0.**
+
+- **Resolved `postcss` CVE (GHSA-qx2v-qp2m-jg93) via npm `overrides`** *(2026-05-17)*. Investigation found that `next@15.5.18`, `next@16.0.0`, and `next@16.2.6` all pin `postcss@8.4.31` exact — a Next upgrade would not have fixed the advisory. Added `"overrides": { "postcss": "^8.5.10" }` to `package.json` and bumped the direct devDependency from `^8.4.38` → `^8.5.10` (npm requires the direct dep range to intersect the override). After `npm install`, all 9 postcss instances in the dep tree resolve to `8.5.14`, including Next's previously-nested copy. Build clean; homepage / `/shop/[slug]` / `/cart` HTTP 200 with stylesheet bundles intact. **`npm audit` now reports 1 moderate (brace-expansion transitive only) — down from 25 vulns at the start of the security pass two days ago.**
 
 - **Upgraded `swiper` from `^11.2.5` (installed `11.2.10`) → `^12.1.4`** — eliminates critical prototype-pollution CVE (GHSA-hmx5-qpq5-p643), the last remaining critical advisory after the same-day axios cleanup. Swiper@12 is a breaking-change release; impact in this codebase was minimal because we only use the `Navigation` + `Thumbs` modules in a single component (`src/components/shop/product-page/mobile/MobileProductSlider.tsx`, mobile product gallery on `/shop/[slug]`). v12's main user-visible change (CSS-pseudo nav arrows → SVG icons) rendered cleanly without restyling — verified on mobile and iPad-mini viewports against `/shop/life-saver`. `npm audit` now reports 3 moderate vulns (down from 25 at session start, with 18 of those eliminated by the axios removal earlier in the day).
 
@@ -17,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Cyber Repo Security Playbook v0.1** (`agent_docs/CYBER_REPO_SECURITY_PLAYBOOK.md`) — backend-agnostic, principle-first playbook for dependency CVE triage and cleanup. Seeded from the 2026-05-16 `npm audit` pass; documents the audit → fix → analyze → remove sequence, the `npm audit fix --force` Next.js downgrade trap, and skill-extraction candidates (`/audit-deps`, `/remove-unused-dep`, etc.). Companion to `agent_docs/SECURITY_FINDINGS.md` (which tracks app-level findings).
+- **Cyber Repo Security Playbook v0.1** (`agent_docs/CYBER_REPO_SECURITY_PLAYBOOK_v0.5.md`) — backend-agnostic, principle-first playbook for dependency CVE triage and cleanup. Seeded from the 2026-05-16 `npm audit` pass; documents the audit → fix → analyze → remove sequence, the `npm audit fix --force` Next.js downgrade trap, and skill-extraction candidates (`/audit-deps`, `/remove-unused-dep`, etc.). Companion to `agent_docs/SECURITY_FINDINGS.md` (which tracks app-level findings).
 
 - **Testing Playbook v2.0** (`agent_docs/TESTING_PLAYBOOK.md`) — multi-backend testing patterns codified for App Factory reuse. Generalizes v1.0's Supabase + Stripe patterns to be backend-agnostic at the principle level, with concrete implementations as appendix examples drawn from StarkReads (Supabase) and Dockbloxx (WooCommerce REST). v1.0 archived at `agent_docs/TESTING_PLAYBOOK_v1.0_ARCHIVE.md`. Synthesis decisions captured separately at `agent_docs/playbook-v2.0-synthesis-notes.md`.
 
