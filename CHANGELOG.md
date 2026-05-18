@@ -7,9 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+_(Nothing yet — clean baseline post-1.1.0.)_
+
+## [1.1.0] - 2026-05-17
+
+Two-day end-to-end security-cleanup release. Drove `npm audit` from **25 vulnerabilities (3 critical, 11 high, 9 moderate)** at the start of 2026-05-16 to **0** deployed to production by end of 2026-05-17. First documented multi-repo security patch promotion via the three-phase procedure (dev → local prod mirror → Vercel prod). Captures: 1 unused-dep removal (axios, 18 advisories eliminated from graph), 1 breaking-change dep migration with visual sign-off (swiper 11→12), 2 npm `overrides` applications (postcss, brace-expansion) proving the pattern generalizes, 4 new playbook principles, 3 new gotchas codified, the load-bearing **Three-Repo Promotion** procedure formalized end-to-end. Zero regressions reported post-deploy.
+
 ### Added
 
-- **Cyber Repo Security Playbook v0.5** *(2026-05-17)* — major expansion. Added **Phase 6** (Production propagation + pre-deploy verification) codifying the lockfile-copy → `npm ci` → build → eyeball workflow for shipping dep changes to the production/Vercel repo. Added a reusable **Pre-Deployment Eyeball Checklist** scoped to customer-facing storefronts (8 pages, viewport-specific, with a 5-minute speed-run option for time-constrained checks). New principle **P9** (production deployment requires lockfile propagation + `npm ci` + pre-deploy eyeball) anchors the new phase. Marked Case Studies #1→#4 as the **canonical end-to-end reference walkthrough** for App Factory replication: baseline → audit-fix → remove-unused → breaking-migration-with-visual-signoff → overrides-pattern → second-overrides-application → final 0-vuln state → propagation.
+- **Cyber Repo Security Playbook v0.6** *(2026-05-17 afternoon — supersedes v0.5)* — file renamed `agent_docs/CYBER_REPO_SECURITY_PLAYBOOK_v0.5.md` → `agent_docs/CYBER_REPO_SECURITY_PLAYBOOK_v0.6.md`. **Major restructure after the three-repo promotion was verified end-to-end against live production.** New top-level **Procedure: Three-Repo Security Patch Promotion via npm ci** section is the load-bearing runbook (Phase 1 Dev / Phase 2 Local Prod Mirror / Phase 3 Vercel Prod, command-by-command with all checkpoints). New top-level **Gotchas** section with three codified failure modes: **G-NPM-1** (`EOVERRIDE` — overrides must intersect direct-dep range), **G-NPM-2** (`rm -rf .next` before final smoke), **G-NPM-3** (stray parent-level files trigger Next.js multi-lockfile warning). **Replaced v0.5's P9** with a more specific three-repo P9. New principles **P10** (`npm ci` for lock-strict propagation between repos), **P11** (threat-landscape check before every install session), **P12** (git divergence: investigate before pulling, never force). Old standalone Case Studies #3 (postcss override) and #4 (brace-expansion override) folded into a new unified **Case Study #3 — Three-Repo Promotion: From 25 Vulns to Zero, End-to-End** with #3a / #3b sub-parts and the afternoon's three-repo arc (including the git divergence event resolved per P12). Phase 6 in Standard Workflow reduced to a pointer at the new procedure section. `MANUAL_SMOKE_TEST.md` (repo root) added to Companion Documents with its relationship to the playbook's Pre-Deployment Eyeball Checklist explained.
+
+- **Cyber Repo Security Playbook v0.5** *(2026-05-17 morning — superseded by v0.6 same day)* — added Phase 6 (Production propagation + pre-deploy verification) codifying the lockfile-copy → `npm ci` → build → eyeball workflow. Added reusable Pre-Deployment Eyeball Checklist scoped to customer-facing storefronts (8 pages, viewport-specific, 5-minute speed-run option). New principle P9 (later replaced in v0.6 by the more specific three-repo P9). Marked Case Studies #1→#4 as the canonical end-to-end reference walkthrough.
+
+- **Cyber Repo Security Playbook v0.1 (seeded)** *(2026-05-16 — file now at `agent_docs/CYBER_REPO_SECURITY_PLAYBOOK_v0.6.md`)* — backend-agnostic, principle-first playbook for dependency CVE triage and cleanup. Initial seed from the 2026-05-16 `npm audit` pass; documented the audit → fix → analyze → remove sequence, the `npm audit fix --force` Next.js downgrade trap, and skill-extraction candidates. Companion to `agent_docs/SECURITY_FINDINGS.md` (app-level findings). Subsequently expanded through v0.2 → v0.3 → v0.4 → v0.5 → v0.6 across both session days (see playbook's internal Changelog for version-by-version history).
+
+- **Testing Playbook v2.0** (`agent_docs/TESTING_PLAYBOOK.md`) — multi-backend testing patterns codified for App Factory reuse. Generalizes v1.0's Supabase + Stripe patterns to be backend-agnostic at the principle level, with concrete implementations as appendix examples drawn from StarkReads (Supabase) and Dockbloxx (WooCommerce REST). v1.0 archived at `agent_docs/TESTING_PLAYBOOK_v1.0_ARCHIVE.md`. Synthesis decisions captured separately at `agent_docs/playbook-v2.0-synthesis-notes.md`.
 
 ### Security
 
@@ -22,12 +34,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 - **`axios` dependency** — never imported in any source file; was the single biggest source of `npm audit` advisories (18 CVEs spanning SSRF, prototype pollution, credential leakage, CRLF injection, DoS). Removed via `npm uninstall axios`. Docs updated: deleted the "Alternative HTTP Client: Axios" example section in `docs/architecture/frontend.md` (it described aspirational use that was never adopted — project uses native `fetch()`).
-
-### Added
-
-- **Cyber Repo Security Playbook v0.1** (`agent_docs/CYBER_REPO_SECURITY_PLAYBOOK_v0.5.md`) — backend-agnostic, principle-first playbook for dependency CVE triage and cleanup. Seeded from the 2026-05-16 `npm audit` pass; documents the audit → fix → analyze → remove sequence, the `npm audit fix --force` Next.js downgrade trap, and skill-extraction candidates (`/audit-deps`, `/remove-unused-dep`, etc.). Companion to `agent_docs/SECURITY_FINDINGS.md` (which tracks app-level findings).
-
-- **Testing Playbook v2.0** (`agent_docs/TESTING_PLAYBOOK.md`) — multi-backend testing patterns codified for App Factory reuse. Generalizes v1.0's Supabase + Stripe patterns to be backend-agnostic at the principle level, with concrete implementations as appendix examples drawn from StarkReads (Supabase) and Dockbloxx (WooCommerce REST). v1.0 archived at `agent_docs/TESTING_PLAYBOOK_v1.0_ARCHIVE.md`. Synthesis decisions captured separately at `agent_docs/playbook-v2.0-synthesis-notes.md`.
 
 ## [1.0.0] - 2026-05-11
 
