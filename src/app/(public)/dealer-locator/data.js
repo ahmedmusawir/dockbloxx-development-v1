@@ -9,7 +9,7 @@ export const dealers = [
     name: "Elite Renovations N.C.",
     address: "2230 Blane Rd New London NC 28127",
     phone: "980-234-8866",
-    website: "https://www.eliterenovationsnc.com/",
+    website: "https://www.eliterenovationsnc.com",
   },
   {
     name: "Lake Life Solutions TN",
