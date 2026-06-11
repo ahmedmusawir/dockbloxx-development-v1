@@ -2,7 +2,11 @@
 // HOME: app/page.tsx
 // --------------------------------------------
 import HomePageContent from "./HomePageContent";
-import { fetchYoastSEOJson, fixUrl } from "@/lib/seoUtils";
+import {
+  fetchYoastSEOJson,
+  fixUrl,
+  injectOrganizationFacts,
+} from "@/lib/seoUtils";
 import { mapYoastToMetadata } from "@/lib/yoastMapper";
 import Script from "next/script";
 
@@ -18,7 +22,10 @@ export async function generateMetadata() {
 export default async function Home() {
   // Fetch once more to pull the schema object
   const yoast = await fetchYoastSEOJson("home");
-  let schema = yoast?.schema ? JSON.stringify(yoast.schema) : null;
+  const withFacts = yoast?.schema
+    ? injectOrganizationFacts(yoast.schema)
+    : null;
+  let schema = withFacts ? JSON.stringify(withFacts) : null;
 
   if (schema) {
     schema = fixUrl(schema); // fix URLs inside the schema
