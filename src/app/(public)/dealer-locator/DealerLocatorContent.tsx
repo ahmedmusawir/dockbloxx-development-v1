@@ -4,14 +4,16 @@ import Head from "next/head";
 import React from "react";
 import Image from "next/image";
 import { getImageUrl } from "@/lib/utils";
-import { dealers } from "./data";
+import { getDealers } from "@/services/dealerServices";
 import {
   MdOutlinePhone,
   MdOutlineLocationOn,
   MdOutlineLanguage,
 } from "react-icons/md";
 
-const DealerLocatorContent = () => {
+const DealerLocatorContent = async () => {
+  const dealers = await getDealers();
+
   return (
     <>
       <Head>

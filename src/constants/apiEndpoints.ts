@@ -10,3 +10,4 @@ export const GRAPHQL_ENDPOINT = getApiUrl("/graphql");
 export const HOW_TO_BLOXX_REST_URL = getApiUrl(
   "/wp-json/dockbloxx/v1/product-videos"
 );
+export const DEALER_LOCATOR_REST_URL = `${WP_REST_PAGES}?slug=dealer-locator`;
