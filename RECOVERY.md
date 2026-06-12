@@ -1,5 +1,17 @@
 # Recovery State
 
-Last action: Wrote 27 unit tests across three new files covering today's logic — `getDealers()` (10 tests in `tests/services/dealerServices.test.ts`, NEW subdir mirroring `src/services/`), the dealer-locator substring search filter (6 tests in `tests/components/dealer-locator/DealerList.test.tsx`, NEW subdir matching the existing feature-organized `tests/components/cart/`/`checkout/` pattern), and `injectOrganizationFacts()` (11 tests in `tests/lib/seoUtils.test.ts`). Search filter tested via component render (Path A — no source refactor). All three source files (`src/services/dealerServices.ts`, `src/app/(public)/dealer-locator/DealerList.tsx`, `src/lib/seoUtils.ts`) UNTOUCHED. Mocking strategy mirrors the gold-standard pattern from `tests/api/get-coupon-by-code.test.ts` (jest.mock apiEndpoints + global.fetch swap with originalFetch restore). Tony's two plan additions both applied: testing-library deps verified present in package.json (`react ^16.3.0`, `user-event ^14.6.1`), and `revalidate: 30` ISR option assertion added to the service suite. Tests NOT executed.
-Pending: Tony's `npm test` run — expecting all 27 to pass green.
-Next step: Stand by. Today's uncommitted set: `scripts/seed-dealers.mjs` (new), `src/constants/apiEndpoints.ts` (+1 line), `src/types/dealer.ts` (new), `src/services/dealerServices.ts` (imports refactored + `getDealers` appended), `src/app/(public)/dealer-locator/DealerLocatorContent.tsx` (live-fetch + grid replaced by `<DealerList />`), `src/app/(public)/dealer-locator/DealerList.tsx` (new client component), `src/app/(public)/dealer-locator/data.js` (DELETED), `src/lib/seoUtils.ts` (+ `injectOrganizationFacts` + private helper), `src/app/(public)/page.tsx` (multi-line import + injection step), `tests/services/dealerServices.test.ts` (new, 10 tests), `tests/components/dealer-locator/DealerList.test.tsx` (new, 6 tests), `tests/lib/seoUtils.test.ts` (new, 11 tests), `session_2026-06-11.md` (new), `RECOVERY.md` (touched). All on top of the May carryover.
+Last action: Closed out the 2026-06-11 dealer-locator arc. Full e2e suite green (21/21 — 5 pre-existing files contributing 16 tests + 5 new dealer-locator-flow tests). Unit suite green (27/27). Tony shipping to prod via copy of `src/` + `tests/` folders. Optional: bring `e2e/dealer-locator-flow.spec.ts` over too if e2e parity on prod is wanted.
+
+**Arc summary:** Dealer-locator page migrated from static `data.js` import to live WP read via `getDealers()` service (slug-queried page → `acf.dealer_data` repeater → clean `Dealer` shape, defensive `[]` on any failure). Server-fetch + Client-filter split for client-side substring search on `dealer.name` (case-insensitive, no library, no debounce). Homepage JSON-LD enriched with `foundingDate: "2022"` + `founder: { "@type": "Person", "name": "Brady Bragg" }` via `injectOrganizationFacts` helper that handles BOTH string and array `@type` forms. 27 unit tests + 5 e2e tests cover all three pieces. Static `data.js` deleted post visual sign-off.
+
+**Production prereqs (operational, not code):**
+- Prod WP must have dealer-locator page at slug `dealer-locator` with ACF `dealer_data` repeater populated (manual entry — same path as staging; native ACF REST writes silently no-op for repeaters on this WP install)
+- Prod env vars: `NEXT_PUBLIC_BACKEND_URL` pointing to prod WP, WC consumer keys
+
+**Post-deploy 5-second smoke checks:**
+- `/dealer-locator` — confirm dealers render (live WP read)
+- View-source on `/` → search for `yoast-schema-moose` → confirm `"foundingDate":"2022"` + `"founder":{"@type":"Person","name":"Brady Bragg"}` inside the Organization node
+
+Pending: None on this arc. Tony's final move (copy + run on prod) is operational.
+
+Next step: Await Tony's next session. Today's uncommitted set sits on the working tree per the no-commit rule; will move with the `src/` + `tests/` copy to prod.
