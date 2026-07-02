@@ -15,7 +15,6 @@ const ThankyouPageContent = () => {
   const [latestOrder, setLatestOrder] = useState<any>(null);
   const isCustomerRegistered = useRef(false);
 
-  const hasTrackedPurchase = useRef(false);
   const { trackPurchase } = useCheckoutTracking();
 
   const { trackSignup } = useSignupTracking();
@@ -36,10 +35,12 @@ const ThankyouPageContent = () => {
       const parsed = JSON.parse(storedOrder);
       setLatestOrder(parsed);
 
-      // Track GTM purchase only once
-      if (!hasTrackedPurchase.current) {
-        hasTrackedPurchase.current = true;
+      // sessionStorage marker keyed by order.id — survives refresh + back-nav; GUARDRAIL 7 (per-order, not global).
+      const lockKey = `ga4_purchase_fired_${parsed.id}`;
+      if (!sessionStorage.getItem(lockKey)) {
+        sessionStorage.setItem(lockKey, "1");
         trackPurchase(parsed);
+        localStorage.removeItem("latestOrder");
       }
     }
 

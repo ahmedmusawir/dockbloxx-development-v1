@@ -1,73 +1,111 @@
-# workflow/01_SOLUTION.md — Phase 1: The Fix (one change at a time)
+# workflow/01_SOLUTION.md — Phase 1: The Fix (REWRITTEN v1.1 after live investigation)
 
-**Enter this phase only after Tony approves the recon findings.**
+**This file replaces the original 01_SOLUTION.md. The root cause changed — read
+EVIDENCE_ADDENDUM.md first.**
 
-**Goal:** Make `purchase` fire exactly once per completed order, stamped with the real
-WooCommerce order number, from a single dispatch source. Implement one change at a time,
-stopping for review after each.
+**Enter this phase only after Tony approves.**
 
-Steps marked **[CONFIRM AGAINST RECON]** depend on what Phase 0 found. Finalize them from
-the recon findings before implementing — do not implement the draft assumption blindly.
+The fix is now TWO tracks with TWO owners. They are independent and both required:
 
----
+- **Track A — App (Claudy, this repo):** stop the duplicate firing at the source.
+- **Track B — GTM container (Tony + Coach, OUTSIDE this repo):** restore the real
+  order ID as transaction_id. Claudy does not perform Track B and must not attempt to
+  compensate for it in code.
 
-## Step 1 — Transaction ID = real WooCommerce order number
-
-**[CONFIRM AGAINST RECON]** Using the exact stable identifier recon confirmed (order ID vs
-order number, per GUARDRAIL 4):
-
-- Set the `purchase` event's `transaction_id` to that real order identifier.
-- Remove any timestamp, random, or client-generated value if recon found one in use.
-- If recon confirmed the real order ID is already used, record that and skip the edit —
-  do not change it just to change it.
-
-**Checkpoint:** Show Tony the before/after of the `transaction_id` source. Await review.
+Why both: Track B alone still lets duplicate fires pollute Google Ads, Meta, and TikTok
+(no transaction dedup there) and keeps re-registering customers. Track A alone still
+sends compound garbage IDs to GA4 — irreconcilable with WooCommerce orders — and fails
+the ticket's own Definition of Done, which requires the REAL Woo order ID in DebugView.
 
 ---
 
-## Step 2 — Once-per-order lock (survives refresh and back-navigation)
+## TRACK A — App fix (Claudy)
 
-- When `purchase` is about to fire, build a marker key from the specific order ID
-  (for example a `sessionStorage` key namespaced with the order ID).
-- Before firing, check for that marker. If present, do not fire. If absent, fire, then
-  write the marker.
-- The marker must persist across refresh and back-navigation within the session, so the
-  same order can never fire twice.
-- **GUARDRAIL 7:** key strictly by order ID. Do not use a global "purchase fired" flag —
-  it would block a legitimate second order in the same session.
+One change at a time. Checkpoint after each. No commits without Tony's review.
 
-**[CONFIRM AGAINST RECON]** If recon found an existing guard (e.g. a React ref) that resets
-on remount, replace or supplement it with this order-ID-keyed persistent marker rather than
-leaving both.
+### Step A1 — Once-per-order lock that survives remount
 
-**Checkpoint:** Show Tony the lock logic and the storage key shape. Await review.
+- In `ThankyouPageContent.tsx`: before calling `trackPurchase(parsed)`, check
+  `sessionStorage` for a marker keyed to that specific order ID (e.g. a key namespaced
+  with `parsed.id`). If present, do not fire. If absent, fire, then write the marker.
+- Replace the `hasTrackedPurchase` ref logic with this persistent check (the ref may be
+  removed or kept as an in-view fast path — Claudy proposes, Tony decides).
+- GUARDRAIL 7 stands: key strictly by order ID. A global flag would block a legitimate
+  second order in the same session (validated by Test 1D).
+
+**Checkpoint:** show Tony the lock logic and key shape. Await review.
+
+### Step A2 — Clear the stored order after successful fire
+
+- After `trackPurchase` fires (and after the page has what it needs to render the
+  order summary — read into state FIRST, then clear), remove `latestOrder` from
+  localStorage so a future mount finds nothing to re-send.
+- Ordering matters: the page renders from React state (`setLatestOrder`), so clearing
+  localStorage after state is set must not blank the on-screen summary. Verify by
+  rendering, then refreshing: summary may legitimately show "no order details" after
+  refresh, but NO purchase re-fires. Confirm with Tony that this UX trade
+  (refresh loses the summary display) is accepted — it is the price of the clear, and
+  the lock in A1 already protects even if the clear is deferred.
+
+**Checkpoint:** show Tony the clear placement and the refresh behavior. Await review.
+
+### Step A3 — Same-pattern guard for customer registration (report first)
+
+- The identical remount bug re-runs `regCustomer` / `user_signup` (Evidence E10).
+- Claudy REPORTS the proposed same-pattern fix (order- or email-keyed marker) and waits.
+  This is adjacent scope: Tony decides whether it ships in this ticket or is logged for
+  a follow-up. Do not implement without explicit approval.
+
+### Track A explicitly does NOT include
+
+- Any change to transaction_id construction — the app already sends the real Woo order
+  ID (Evidence E2). Original Step "use real order ID" is confirmed a NO-OP. Do not
+  touch it.
+- Any GTM-compensating hacks in code (e.g. pushing extra ID fields). The ID fix is
+  Track B, in the container.
 
 ---
 
-## Step 3 — Single dispatch source
+## TRACK B — GTM container fix (Tony, with Coach's sign-off — NOT Claudy)
 
-**[CONFIRM AGAINST RECON]** Based on recon's dispatch-path finding:
+Recorded here so the pack holds the whole solution. Two changes, done as two separate
+container versions, in this order:
 
-- If `purchase` fires from exactly one place, confirm it and move on.
-- If recon found a second source (duplicate GTM tag, extra URL trigger, or a direct `gtag`
-  alongside the dataLayer push): **do not remove anything yet.** Per GUARDRAIL 2, present
-  both sources and your recommendation to Tony, and wait for his decision on which stays.
-  Only after his decision, apply the agreed removal as its own isolated change.
+### Step B1 — Restore the real transaction_id (the inflation stopper)
 
-**Checkpoint:** Confirm to Tony that purchase now dispatches from exactly one source.
-Await review.
+- In GTM web container GTM-KVFXFKQ8, create a named workspace (e.g.
+  "fix-transaction-id").
+- In the "ga4 - event settings" variable (Google Tag: Event Settings), the
+  `transaction_id` parameter is currently mapped to the generated event_id. Remap it to
+  the real dataLayer value — the `ecommerce.transaction_id` Data Layer Variable — or
+  remove the override entirely so the ecommerce object's value passes through untouched.
+- Preflight with Coach (GAP-1): confirm the event_id mapping isn't load-bearing for a
+  client/server dedup path that something still expects.
+- Test in GTM Preview against staging: place a test order, confirm the GA4 event now
+  carries the REAL Woo order number as transaction_id.
+- Coach approves → publish. Note the version number for rollback.
+
+### Step B2 — Resolve the Stape transport (separate change, after B1 is verified)
+
+- "ga4 - config settings" still points `server_container_url` at
+  https://fp.dockbloxx.com (retired Stape relay, GAP-2). Decision owner: Coach.
+- If Stape is truly retired: remove the server_container_url so GA4 sends direct, in its
+  own workspace/version, verified in Preview (events still arrive in DebugView), then
+  published. If the Stape subscription is still active and relaying, schedule removal
+  with its cancellation.
+- Do NOT bundle B2 with B1. Transport changes have blast radius; isolate them.
 
 ---
 
-## Constraints throughout
+## Sequencing
 
-- Append to existing files where possible. Avoid new files unless justified.
-- Do not touch billing, shipping, line items, payment, or coupon logic (GUARDRAIL 8).
-- No commits. Tony reviews and commits.
-- One change at a time. Do not batch Steps 1–3 into a single edit.
+1. Track A (Claudy, dev repo) — can start immediately after approval.
+2. Track B1 (Tony + Coach, GTM) — needs Coach's sign-off; independent of A.
+3. Validate BOTH together per 02_TESTING.md: one purchase per order, carrying the real
+   Woo order ID, in DebugView on property 443304844.
+4. Track B2 (Stape transport) — after B1 verifies clean.
 
 ## Stop Gate
 
-> Fix implemented across the approved steps, each reviewed. Purchase now uses the real
-> order number, is locked once-per-order, and dispatches from a single source. Ready for
-> Phase 2 validation. Awaiting Tony's go.
+> Track A implemented and reviewed step-by-step. Track B recorded and handed to Tony
+> for the Coach conversation. Ready for Phase 2 validation once B1 is published.

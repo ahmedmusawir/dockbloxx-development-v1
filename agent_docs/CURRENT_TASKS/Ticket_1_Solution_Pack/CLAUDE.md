@@ -17,9 +17,12 @@ order fires the `purchase` event more than once, and duplicates carry different,
 transaction IDs, so GA4 cannot dedupe them. Revenue in GA4 is therefore inflated and
 untrustworthy.
 
-**Your mission:** Make the `purchase` event fire exactly **once** per completed order,
-stamped with the **real WooCommerce order number** as `transaction_id`, and prove it in
-GA4 DebugView on staging. Change tracking only. Do not alter checkout behavior.
+**Your mission (Track A):** Make the `purchase` event fire exactly once per completed
+order. The app ALREADY stamps the real WooCommerce order number — do not touch the
+ID. The ID corruption happens in the GTM container (Track B), owned by Tony + Coach,
+outside this repo. Change tracking only. Do not alter checkout behavior. The ticket
+closes only when BOTH tracks are done and DebugView shows one purchase with the real
+Woo order ID.
 
 **Who runs you:** Tony (the operator). He reviews and approves every step before you
 proceed or commit. You never commit on your own.
@@ -74,12 +77,13 @@ These are the expected touch points based on prior knowledge. Treat every one as
   re-reads on mount — this is the suspected re-fire mechanism.
 - The order-creation path where the real WooCommerce order ID / order number is returned.
 
-### Suspected mechanism (hypothesis, verify it)
+### Confirmed mechanism (see EVIDENCE_ADDENDUM.md)
 
-The thank-you page likely re-fires `purchase` on every mount / refresh / back-navigation
-because any existing "already fired" guard resets on remount while the finished order is
-still sitting in client storage, ready to be re-read and re-sent. Recon proves or disproves
-this before any fix.
+Confirmed mechanism (see EVIDENCE_ADDENDUM.md): the thank-you page re-fires `purchase`
+on every mount because the ref guard resets and `latestOrder` is never cleared (app
+fault). Separately, the GTM container overwrites the real `transaction_id` with a
+generated `event_id`, so each duplicate reaches GA4 with a different ID and defeats
+dedup (container fault). Revenue inflation = both faults compounding.
 
 ---
 
@@ -124,10 +128,11 @@ Ticket_1_Solution_Pack/
 
 1. `CLAUDE.md` (this file)
 2. `GUARDRAILS.md`
-3. `references/ORIENTATION.md`
-4. `workflow/00_RECON.md` → fill `templates/RECON_FINDINGS.md` → **STOP for approval**
-5. `workflow/01_SOLUTION.md` → implement one change at a time → review each
-6. `workflow/02_TESTING.md` → fill `templates/EVIDENCE_LOG.md`
+3. `EVIDENCE_ADDENDUM.md` — the corrected root cause and ownership split (supersedes any conflicting statement in this file)
+4. `references/ORIENTATION.md`
+5. `workflow/00_RECON.md` → fill `templates/RECON_FINDINGS.md` → **STOP for approval**
+6. `workflow/01_SOLUTION.md` → implement one change at a time → review each
+7. `workflow/02_TESTING.md` → fill `templates/EVIDENCE_LOG.md`
 
 ---
 
@@ -159,3 +164,4 @@ explicit override, the doctrine above holds.
 | Version | Date       | Change                                             |
 | ------- | ---------- | -------------------------------------------------- |
 | 1.0     | 2026-07-01 | Initial Ticket 1 Solution Pack. Recon-first, gated.|
+| 1.1     | 2026-07-02 | Root cause corrected after live GTM investigation: app fires duplicates (Track A, Claudy); GTM overwrites transaction_id with generated event_id (Track B, Tony+Coach). Solution rewritten, guardrails 9–11 updated. |
