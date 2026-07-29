@@ -48,6 +48,46 @@ export interface OrderData {
   meta_data: Array<{ key: string; value: unknown }>;
 }
 
+// Native WooCommerce Order Attribution meta keys, by cleaned-attribution field name.
+const WC_ATTRIBUTION_META: Record<string, string> = {
+  utm_source: "_wc_order_attribution_utm_source",
+  utm_medium: "_wc_order_attribution_utm_medium",
+  utm_campaign: "_wc_order_attribution_utm_campaign",
+  utm_content: "_wc_order_attribution_utm_content",
+  utm_term: "_wc_order_attribution_utm_term",
+  source_type: "_wc_order_attribution_source_type",
+  referrer: "_wc_order_attribution_referrer",
+};
+
+// Click IDs + landing page ride as top-level order meta under their own bare keys.
+const TOP_LEVEL_META_KEYS = ["gclid", "fbclid", "wbraid", "gbraid", "landing_page"] as const;
+
+/**
+ * Build order meta_data from cleaned attribution (already filtered to non-empty by
+ * cleanAttribution). Native _wc_order_attribution_* for the UTM/source_type/referrer set,
+ * bare top-level keys for the click IDs + landing_page. Each entry is emitted ONLY when the
+ * field carries a value — no empty meta. `coupon` is intentionally excluded (QR-coupon UI
+ * state, not order attribution). source_type is written verbatim (classified at capture).
+ * Contract: templates/CONTRACT.md (LOCKED-FINAL).
+ */
+function buildAttributionMeta(
+  attribution: CheckoutData["attribution"],
+): Array<{ key: string; value: unknown }> {
+  if (!attribution) return [];
+  const meta: Array<{ key: string; value: unknown }> = [];
+
+  for (const [field, metaKey] of Object.entries(WC_ATTRIBUTION_META)) {
+    const value = attribution[field];
+    if (value) meta.push({ key: metaKey, value }); // conditional: no empty writes
+  }
+  for (const key of TOP_LEVEL_META_KEYS) {
+    const value = attribution[key];
+    if (value) meta.push({ key, value }); // conditional: no empty writes
+  }
+
+  return meta;
+}
+
 export function buildOrderData(checkoutData: CheckoutData): OrderData {
   // Check if coupon is a custom per-product percentage type
   // Custom coupons use fee_lines, native WooCommerce coupons use coupon_lines
@@ -163,22 +203,9 @@ export function buildOrderData(checkoutData: CheckoutData): OrderData {
           ]
         : [],
 
-    // Attribution data for GHL integration (Coach's script). Plumbing preserved
-    // even though the feature is currently dormant — see CLEANUP_BACKLOG.md.
-    meta_data: checkoutData.attribution
-      ? [
-          // Coach/GHL attribution fields
-          ...Object.entries(checkoutData.attribution).map(([key, value]) => ({
-            key: `_coach_ghl_${key}`,
-            value: value,
-          })),
-          // WooCommerce Order Attribution - Origin field
-          {
-            key: "_wc_order_attribution_source_type",
-            value: checkoutData.attribution.utm_source || "direct",
-          },
-        ]
-      : [],
+    // WooCommerce Order Attribution — native meta + click IDs (Ticket 2).
+    // Empty values are never written; `coupon` is excluded; source_type is verbatim.
+    meta_data: buildAttributionMeta(checkoutData.attribution),
   };
 
   console.log(

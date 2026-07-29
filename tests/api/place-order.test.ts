@@ -526,3 +526,65 @@ describe("POST /api/place-order — route handler", () => {
     expect(data.id).toBe(99999);
   });
 });
+
+// --- ATTRIBUTION (Ticket 2 — native Woo meta + click IDs) --------------------
+
+describe("place-order API - Attribution (Ticket 2 native meta)", () => {
+  test("full attribution → 7 native + 4 click IDs + landing_page; coupon excluded; source_type verbatim", () => {
+    const attribution = {
+      utm_source: "facebook",
+      utm_medium: "paid_social",
+      utm_campaign: "summer_sale_2026",
+      utm_content: "carousel_a",
+      utm_term: "dock_bumper",
+      source_type: "utm",
+      referrer: "https://l.facebook.com/",
+      gclid: "TEST-GCLID-123",
+      fbclid: "TEST-FBCLID-456",
+      wbraid: "TEST-WBRAID-789",
+      gbraid: "TEST-GBRAID-000",
+      landing_page: "/shop",
+      coupon: "QR20", // must NOT be forwarded as attribution meta
+    };
+
+    const orderData = buildOrderData(createCheckoutData({ attribution }));
+    const meta = orderData.meta_data;
+
+    // Exactly 12 entries — the 13th (coupon) is dropped.
+    expect(meta).toHaveLength(12);
+
+    expect(Object.fromEntries(meta.map((m) => [m.key, m.value]))).toEqual({
+      _wc_order_attribution_utm_source: "facebook",
+      _wc_order_attribution_utm_medium: "paid_social",
+      _wc_order_attribution_utm_campaign: "summer_sale_2026",
+      _wc_order_attribution_utm_content: "carousel_a",
+      _wc_order_attribution_utm_term: "dock_bumper",
+      _wc_order_attribution_source_type: "utm",
+      _wc_order_attribution_referrer: "https://l.facebook.com/",
+      gclid: "TEST-GCLID-123",
+      fbclid: "TEST-FBCLID-456",
+      wbraid: "TEST-WBRAID-789",
+      gbraid: "TEST-GBRAID-000",
+      landing_page: "/shop",
+    });
+
+    // coupon absent; source_type verbatim (not derived from utm_source); no legacy coach keys.
+    expect(meta.find((m) => m.key === "coupon")).toBeUndefined();
+    expect(meta.some((m) => m.key.startsWith("_coach_ghl_"))).toBe(false);
+  });
+
+  test("sparse attribution → only present fields produce meta (no empty writes)", () => {
+    const orderData = buildOrderData(
+      createCheckoutData({ attribution: { utm_source: "google", source_type: "utm" } }),
+    );
+    expect(orderData.meta_data).toHaveLength(2);
+    expect(Object.fromEntries(orderData.meta_data.map((m) => [m.key, m.value]))).toEqual({
+      _wc_order_attribution_utm_source: "google",
+      _wc_order_attribution_source_type: "utm",
+    });
+  });
+
+  test("no attribution → empty meta_data", () => {
+    expect(buildOrderData(createCheckoutData()).meta_data).toEqual([]);
+  });
+});

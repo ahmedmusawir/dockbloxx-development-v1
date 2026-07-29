@@ -25,6 +25,7 @@ import Footer from "@/components/global/Footer";
 import CartSlide from "@/components/cart/CartSlide";
 import Script from "next/script";
 import { fetchTrackingScripts } from "@/services/trackingSeoServices";
+import AttributionProvider from "@/components/providers/AttributionProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -45,15 +46,13 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const { header, body, footer } = await fetchTrackingScripts();
+  const { header, body } = await fetchTrackingScripts();
 
   const headerJS = stripScriptWrapper(header);
   const bodyHtml = stripNoscriptWrapper(body);
-  const footerJS = stripScriptWrapper(footer);
 
   // console.log("TRACKING SCRIPTS HEADER: [/app/layout.tsx]", headerJS);
   // console.log("TRACKING SCRIPTS BODY: [/app/layout.tsx]", bodyHtml);
-  // console.log("ATTRIBUTION SCRIPT FOOTER: [/app/layout.tsx]", footerJS);
 
   return (
     <html lang="en">
@@ -81,12 +80,8 @@ export default async function RootLayout({
           dangerouslySetInnerHTML={{ __html: bodyHtml }}
         />
 
-        {/* Coach's Attribution Script */}
-        <Script
-          id="coach-attribution"
-          strategy="lazyOnload"
-          dangerouslySetInnerHTML={{ __html: footerJS }}
-        />
+        {/* First-touch attribution capture (E2E-safe React provider) */}
+        <AttributionProvider />
       </body>
     </html>
   );

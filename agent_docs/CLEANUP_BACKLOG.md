@@ -41,6 +41,30 @@ Non-urgent items tracked for future cleanup sessions. Not bugs, not security iss
 - Tracked in `SECURITY_FINDINGS.md` Finding #2
 - Not in this backlog because it's a security item, not pure cleanup
 
+### Attribution types belong in `/types`
+
+- `WcSourceType`, `CapturedAttribution`, `ReferrerClassification` currently live in
+  `src/lib/attributionCapture.ts`; `AttributionData` lives in `src/lib/attribution.ts`.
+- Tony's convention: all interfaces/types go in `/types`.
+- Deferred during T2 Phase 1 to keep scope surgical (would relocate the pre-existing
+  `AttributionData` too). Fix: move all four to `src/types/attribution.ts`, update imports.
+- Risk: low (pure type move).
+
+### Legacy attribution tracker still active (retire — candidate ticket)
+
+- Discovered during T2 Phase 2 manual testing (2026-07-29).
+- A legacy tracker still runs on the page and writes a PARALLEL attribution key set to
+  **localStorage** (observed stale `utm_content="carou"`, full google/cpc set) plus `_cltk`
+  to sessionStorage. This is NOT the T2 `AttributionProvider` (which is sessionStorage-only,
+  code-verified) and NOT the reader's concern (reader reads its own contract keys).
+- Risk: confusion / competing attribution signals; stale values.
+- Action: identify the source (WP footer? GTM tag? another injected script?) and retire it.
+  **Do NOT remove within Ticket 2** (out of scope, GUARDRAIL 9/10). Its own follow-up ticket.
+- Addendum (T2 Phase 2, 2026-07-29): `_cltk` re-written on EVERY landing incl. post-Clear-site-data
+  (live, not residue). Also observed (Finding 3): script-driven navigation to a Google
+  `warmup.html` seconds after landing in incognito (not in clean profile) — suspected same
+  tracker / GTM-adjacent; fold into this ticket's investigation.
+
 ### GHL attribution feature plumbing
 
 - Feature deprecated; plumbing left intact in code

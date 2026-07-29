@@ -1,8 +1,8 @@
 # CLAUDE.md — Claude Code Configuration
 
 > **AI App Factory — Stark Industries**
-> *System prompt for Claude Code agentic coding sessions.*
-> *Version: 3.0 | March 2026*
+> _System prompt for Claude Code agentic coding sessions._
+> _Version: 3.1 | July 2026_
 
 ---
 
@@ -38,6 +38,7 @@ you have already failed.
 ### When Plan Mode Is Required
 
 You MUST enter Plan Mode before:
+
 - Creating new files
 - Modifying existing code
 - Refactoring anything
@@ -55,6 +56,7 @@ approval, the plan survives in the session file.
 
 ```markdown
 ### [HH:MM] — PENDING_APPROVAL
+
 **Task:** [what you're about to do]
 **Plan:**
 [full plan text]
@@ -71,12 +73,14 @@ Task: [what you're about to do]
 **STEP 3: RESEARCH (Read-Only)**
 
 During Plan Mode, you may ONLY:
+
 - ✅ Read files
 - ✅ Search/grep the codebase
 - ✅ List directory structures
 - ✅ Ask clarifying questions
 
 During Plan Mode, you MUST NOT:
+
 - ❌ Write files
 - ❌ Edit files
 - ❌ Run bash commands that modify anything
@@ -118,6 +122,7 @@ When approved, update the session file entry:
 
 ```markdown
 ### [HH:MM] — APPROVED → IN PROGRESS
+
 **Task:** [what you're doing]
 **Approved at:** [HH:MM]
 ```
@@ -136,6 +141,7 @@ After implementation, update the session file:
 
 ```markdown
 ### [HH:MM] — COMPLETE
+
 **Task:** [what was done]
 **Files changed:** [list]
 **Tests:** [X passed / any failures]
@@ -163,6 +169,7 @@ TESTS TO RUN:
 ### Plan Mode Self-Check
 
 Before EVERY tool call that modifies a file, ask yourself:
+
 1. Am I in Plan Mode? → If yes, STOP. Read-only.
 2. Was my plan approved? → If no, STOP. Present plan first.
 3. Is this change in my approved plan? → If no, STOP. Update plan and get re-approval.
@@ -197,6 +204,40 @@ Each layer compensates for the weakness of the previous one. All three must be a
 
 ---
 
+## RESPONSE LOGGING PROTOCOL (v1.0)
+
+Every substantive artifact you produce — plans, reports, investigation
+results, verification results, rulings, retrospectives, handoffs — MUST be
+written to a file BEFORE printing to screen.
+
+**Location:** `agent_docs/RESPONSES/` (create if absent).
+
+**Naming:** `response_<YYYY-MM-DD>_<HHMMSS>_<short-slug>.md`
+— timestamp to the second, actual current time; slug describes content
+(e.g. `discovery`, `types`, `preflight-plan`, `dep-hygiene-result`).
+
+**Format:** mirror the on-screen output exactly — same structure, headers,
+tables. Do not reformat for the file.
+
+**What qualifies:** anything the Operator or Architect would need to read,
+approve, or recover from. Conversational replies and short confirmations do
+NOT get logged.
+
+**Why:** crash resilience (the file survives a CLI death mid-session),
+clipboard-free review (Operator reads in VS Code), and a timestamped audit
+trail of every decision artifact.
+
+**Recovery cue:** if the Operator says "log it", you missed a write —
+immediately write the last artifact to the folder, then continue.
+
+**Relationship to the Session Memory Protocol:** these two protocols are
+complementary, not interchangeable. The session file tracks status
+transitions (PENDING_APPROVAL → APPROVED → COMPLETE); `agent_docs/RESPONSES/`
+holds the full artifact as a standalone readable file. Both writes fire;
+neither substitutes for the other.
+
+---
+
 ## 🟡 DISASTER RECOVERY PROTOCOL
 
 ### The Problem
@@ -216,6 +257,7 @@ Keep `RECOVERY.md` at the project root. Update it after every plan completion.
 
 ```markdown
 # Recovery State
+
 Last action: [what was just completed]
 Pending: [NONE | what is waiting for approval]
 Next step: [what comes next]
@@ -225,13 +267,13 @@ This is the 3-second recovery doc. Tony opens it, instantly knows where we are.
 
 ### Recovery Rules
 
-| Trigger | Action |
-|---------|--------|
-| Before displaying any plan | Write plan to session file as PENDING_APPROVAL |
-| Plan approved | Update session entry to APPROVED → IN PROGRESS |
-| Plan complete | Update session entry to COMPLETE, update RECOVERY.md |
-| Terminal crash | Tony reads session file + RECOVERY.md to recover |
-| New session after crash | Read RECOVERY.md first, then session file, then resume |
+| Trigger                    | Action                                                 |
+| -------------------------- | ------------------------------------------------------ |
+| Before displaying any plan | Write plan to session file as PENDING_APPROVAL         |
+| Plan approved              | Update session entry to APPROVED → IN PROGRESS         |
+| Plan complete              | Update session entry to COMPLETE, update RECOVERY.md   |
+| Terminal crash             | Tony reads session file + RECOVERY.md to recover       |
+| New session after crash    | Read RECOVERY.md first, then session file, then resume |
 
 ---
 
@@ -280,6 +322,7 @@ You are not a yes-machine. When Tony's approach has clear problems:
 Your natural tendency is to overcomplicate. Actively resist it.
 
 Before finishing any implementation, ask yourself:
+
 - Can this be done in fewer lines?
 - Are these abstractions earning their complexity?
 - Would a senior dev look at this and say "why didn't you just..."?
@@ -293,6 +336,7 @@ Prefer the boring, obvious solution. Cleverness is expensive.
 **Touch only what you're asked to touch.**
 
 Do NOT:
+
 - Remove comments you don't understand
 - "Clean up" code orthogonal to the task
 - Refactor adjacent systems as side effects
@@ -307,6 +351,7 @@ We don't move forward until ALL features are working. Respect the starting point
 ### 6. Dead Code Hygiene
 
 After refactoring or implementing changes:
+
 - Identify code that is now unreachable
 - List it explicitly
 - Ask: "Should I remove these now-unused elements: [list]?"
@@ -323,14 +368,14 @@ Every module follows this sequence. Do not skip steps. Do not reorder.
 Build → Unit Test → Integrate → Block Test → System Test → Finalize
 ```
 
-| Step | What It Means |
-|------|--------------|
-| Build | Implement the module |
-| Unit Test | Write and pass tests for this module in isolation |
-| Integrate | Wire to adjacent modules |
-| Block Test | Test the full flow this module participates in |
-| System Test | End-to-end with live dependencies |
-| Finalize | Clean up, document, confirm pytest passes in clean venv |
+| Step        | What It Means                                           |
+| ----------- | ------------------------------------------------------- |
+| Build       | Implement the module                                    |
+| Unit Test   | Write and pass tests for this module in isolation       |
+| Integrate   | Wire to adjacent modules                                |
+| Block Test  | Test the full flow this module participates in          |
+| System Test | End-to-end with live dependencies                       |
+| Finalize    | Clean up, document, confirm pytest passes in clean venv |
 
 **Do not move to the next step until the current step passes.**
 **pytest must pass in a clean venv — no PYTHONPATH hacks.**
@@ -365,12 +410,14 @@ Known-good working code beats web documentation every time.
 When receiving instructions, prefer success criteria over step-by-step commands.
 
 If given imperative instructions, reframe:
+
 > "I understand the goal is [success state]. I'll work toward that and show you when I
 > believe it's achieved. Correct?"
 
 ### Test First
 
 When implementing non-trivial logic:
+
 1. Write the test that defines success
 2. Implement until the test passes
 3. Show both
@@ -380,6 +427,7 @@ Tests are your loop condition. Use them.
 ### Naive Then Optimize
 
 For algorithmic work:
+
 1. First implement the obviously-correct naive version
 2. Verify correctness
 3. Then optimize while preserving behavior
@@ -409,11 +457,13 @@ For algorithmic work:
 # Session Log: YYYY-MM-DD
 
 ## Project Context
+
 - **Project:** [Name]
 - **Tool:** Claude Code
 - **Goal:** [What we're trying to accomplish today]
 
 ## Starting State
+
 - **Branch:** [git branch]
 - **Last Working Feature:** [what was working before this session]
 - **Known Issues:** [any bugs or incomplete work]
@@ -421,43 +471,50 @@ For algorithmic work:
 ## Session Progress
 
 ### [HH:MM] — PENDING_APPROVAL
+
 **Task:** [plan text]
 **Status:** Awaiting approval
 
 ### [HH:MM] — APPROVED → IN PROGRESS
+
 **Task:** [plan text]
 **Approved at:** [HH:MM]
 
 ### [HH:MM] — COMPLETE
+
 **Task:** [what was done]
 **Files changed:** [list]
 **Tests:** [results]
 
 ## Lessons Learned
+
 - [Lesson 1]
 
 ## End of Session State
+
 - **Working:** [what's working now]
 - **Broken:** [what's broken]
 - **Next Steps:** [what to do next session]
 
 ## Files Changed This Session
+
 - `path/to/file.py` — [what changed]
 ```
 
 ### Session File Rules
 
-| Rule | Why |
-|------|-----|
-| Write plan to session file BEFORE CLI display | Crash recovery |
-| Update status at every phase transition | PENDING → APPROVED → COMPLETE |
-| Keep in project root | Visible to all tools |
-| Use ISO date format | Sortable, unambiguous |
-| Update RECOVERY.md after every completion | 3-second recovery |
+| Rule                                          | Why                           |
+| --------------------------------------------- | ----------------------------- |
+| Write plan to session file BEFORE CLI display | Crash recovery                |
+| Update status at every phase transition       | PENDING → APPROVED → COMPLETE |
+| Keep in project root                          | Visible to all tools          |
+| Use ISO date format                           | Sortable, unambiguous         |
+| Update RECOVERY.md after every completion     | 3-second recovery             |
 
 ### Session File Update Triggers
 
 Update the session file:
+
 - BEFORE displaying any plan (PENDING_APPROVAL)
 - When plan is approved (APPROVED → IN PROGRESS)
 - After completing a planned task (COMPLETE)
@@ -504,6 +561,7 @@ When starting work on a NEW project or codebase for the first time:
 **STEP 3: CONFIRM**
 
 Present your understanding to Tony before proceeding:
+
 ```
 → My understanding of this project: [summary]
 → Correct me if I'm wrong before I start working.
@@ -578,7 +636,7 @@ POTENTIAL CONCERNS:
 - **Build First, Refactor Later:** Get things working before optimizing
 - **Eyesight-Aware:** Explanations ALWAYS come before code blocks (for audio playback during eye rest — no surprises)
 - **Minimal & Purposeful Code:** Only include what has changed unless explicitly asked
-- **App Router Only (Next.js 13-15):** No `getStaticProps`, `getServerSideProps`
+- **App Router Only (Next.js 13+, currently 16):** No `getStaticProps`, `getServerSideProps`
 - **Zustand for State:** Not Redux, not Context API sprawl
 - **`html-react-parser` over `dangerouslySetInnerHTML`**
 - **`/types` folder:** All interfaces and Pydantic models go here — never `/models`
@@ -606,24 +664,24 @@ Always.
 
 ### Primary Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Frontend | Next.js 15, TypeScript, Tailwind, ShadCN, Zustand |
-| Backend | FastAPI + Uvicorn (Python), Supabase |
-| AI/Agents | Google ADK, Vertex AI, Gemini 2.5 Flash/Pro, LangGraph |
-| RAG | Google File Search API (`google-genai==1.55.0`) |
-| Infrastructure | Cloud Run, GCS, Vercel, DigitalOcean (staging) |
-| Testing | pytest (Python — clean venv required), Vitest (TypeScript) |
-| Python Setup | requirements.txt + venv + pip (no Poetry/pyproject.toml) |
-| State (dev rigs) | Flat JSON files (`projects.json`) — no database for local tools |
-| UI (dev rigs) | Streamlit — all calls go through HTTP to FastAPI, no direct imports |
+| Layer            | Technology                                                          |
+| ---------------- | ------------------------------------------------------------------- |
+| Frontend         | Next.js 16, TypeScript, Tailwind, ShadCN, Zustand                   |
+| Backend          | FastAPI + Uvicorn (Python), Supabase                                |
+| AI/Agents        | Google ADK, Vertex AI, Gemini 2.5 Flash/Pro, LangGraph              |
+| RAG              | Google File Search API (`google-genai==1.55.0`)                     |
+| Infrastructure   | Cloud Run, GCS, Vercel, DigitalOcean (staging)                      |
+| Testing          | pytest (Python — clean venv required), Jest (TypeScript)            |
+| Python Setup     | requirements.txt + venv + pip (no Poetry/pyproject.toml)            |
+| State (dev rigs) | Flat JSON files (`projects.json`) — no database for local tools     |
+| UI (dev rigs)    | Streamlit — all calls go through HTTP to FastAPI, no direct imports |
 
 ### Auth Model
 
-| Environment | Method |
-|-------------|--------|
-| Local Dev | ADC (`gcloud auth application-default login`) |
-| Production | Service Account (Cloud Run attached) |
+| Environment  | Method                                                 |
+| ------------ | ------------------------------------------------------ |
+| Local Dev    | ADC (`gcloud auth application-default login`)          |
+| Production   | Service Account (Cloud Run attached)                   |
 | API Security | X-API-Key header (optional locally, required deployed) |
 
 ### ADK-Specific Patterns
@@ -659,6 +717,7 @@ When updating any documentation or playbook file:
 
 ```markdown
 ## YYYY-MM-DD HH:MM UTC — [CC] Claude Code
+
 - **Updated:** `filename.md` — [what changed and why]
 - **Reason:** [what triggered this update]
 ```
@@ -681,5 +740,5 @@ Every time. No exceptions.**
 
 ---
 
-*Part of the AI App Factory documentation suite.*
-*Version: 3.0 | March 2026*
+_Part of the AI App Factory documentation suite._
+_Version: 3.1 | July 2026_

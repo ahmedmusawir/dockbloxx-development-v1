@@ -1,6 +1,6 @@
 /**
  * Attribution Utility
- * Reads attribution data from sessionStorage (Coach's script)
+ * Reads attribution data from sessionStorage (written first-touch by AttributionProvider).
  */
 
 export interface AttributionData {
@@ -8,17 +8,20 @@ export interface AttributionData {
   utm_medium?: string | null;
   utm_campaign?: string | null;
   utm_content?: string | null;
-  utm_keyword?: string | null;
+  utm_term?: string | null;
+  source_type?: string | null;
+  referrer?: string | null;
   gclid?: string | null;
   fbclid?: string | null;
+  wbraid?: string | null;
+  gbraid?: string | null;
   coupon?: string | null;
   landing_page?: string | null;
-  attribution_captured_at?: string | null;
 }
 
 /**
- * Reads attribution from sessionStorage.
- * Coach's script uses keys WITHOUT the 'dbx_' prefix.
+ * Reads attribution from sessionStorage (keys written first-touch by AttributionProvider,
+ * un-prefixed, matching CONTRACT.md).
  */
 export function getAttribution(): AttributionData {
   if (typeof window === 'undefined') {
@@ -30,12 +33,15 @@ export function getAttribution(): AttributionData {
     utm_medium: sessionStorage.getItem('utm_medium'),
     utm_campaign: sessionStorage.getItem('utm_campaign'),
     utm_content: sessionStorage.getItem('utm_content'),
-    utm_keyword: sessionStorage.getItem('utm_keyword') || sessionStorage.getItem('utm_term'),
-    gclid: sessionStorage.getItem('_cltk'), // Coach's script uses _cltk for click tracking
+    utm_term: sessionStorage.getItem('utm_term'),
+    source_type: sessionStorage.getItem('source_type'),
+    referrer: sessionStorage.getItem('referrer'),
+    gclid: sessionStorage.getItem('gclid'),
     fbclid: sessionStorage.getItem('fbclid'),
+    wbraid: sessionStorage.getItem('wbraid'),
+    gbraid: sessionStorage.getItem('gbraid'),
     coupon: sessionStorage.getItem('coupon'),
     landing_page: sessionStorage.getItem('landing_page'),
-    attribution_captured_at: new Date().toISOString(), // Capture timestamp when read
   };
 }
 
