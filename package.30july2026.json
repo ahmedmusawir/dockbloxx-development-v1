@@ -59,8 +59,7 @@
     "zustand": "^5.0.1"
   },
   "overrides": {
-    "postcss": "^8.5.18",
-    "sharp": "^0.35.0",
+    "postcss": "^8.5.10",
     "brace-expansion": "^2.0.2"
   },
   "devDependencies": {
@@ -80,7 +79,7 @@
     "eslint-config-next": "^15.5.21",
     "jest": "^30.0.3",
     "jest-environment-jsdom": "^30.0.2",
-    "postcss": "^8.5.18",
+    "postcss": "^8.5.10",
     "sass": "^1.69.5",
     "sass-loader": "^16.0.3",
     "shadcn-ui": "^0.9.4",
