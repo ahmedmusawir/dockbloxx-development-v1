@@ -7,13 +7,13 @@ import Stripe from "stripe";
 export async function GET() {
   return NextResponse.json(
     { message: "POST method required" },
-    { status: 405 }
+    { status: 405 },
   );
 }
 
 // --- Stripe Client -----------------------------------------------------------
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-01-27.acacia", // Keep current API version in sync
+  apiVersion: "2025-02-24.acacia", // Keep current API version in sync
 });
 
 // --- POST Handler ------------------------------------------------------------
@@ -64,7 +64,7 @@ export async function POST(request: Request) {
     // (could contain card details, customer email, internal request IDs)
     return NextResponse.json(
       { message: "Failed to process payment. Please try again." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
