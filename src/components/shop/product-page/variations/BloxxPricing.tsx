@@ -3,6 +3,7 @@
 import { ProductVariation } from "@/types/product";
 import React, { useState, useEffect } from "react";
 import BloxxPricingPoleStyles from "./BloxxPricingPoleStyles";
+import BloxxPricingPoleMaterials from "./BloxxPricingPoleMaterials";
 import { CartItem } from "@/types/cart";
 import Link from "next/link";
 
@@ -23,6 +24,9 @@ const BloxxPricing = ({ onPriceChange, setCartItem }: BloxxPricingProps) => {
     null
   );
   const [customSize, setCustomSize] = useState<string | null>(null);
+  const [selectedMaterial, setSelectedMaterial] = useState<string | null>(
+    null
+  ); // Pole Material (Metal / Wood) — nothing selected on load
   const [error, setError] = useState<string | null>(null); // For validation feedback
 
   // Fixing Pole Style square octagon which is considered square
@@ -159,6 +163,12 @@ const BloxxPricing = ({ onPriceChange, setCartItem }: BloxxPricingProps) => {
               value: normalizePoleStyle(defaultStyle) || "Unknown",
             },
             { name: "Pole Size", value: defaultSize || "Unknown" },
+            {
+              name: "Pole Material",
+              value:
+                prev.variations.find((v) => v.name === "Pole Material")
+                  ?.value || "Unknown",
+            },
           ],
         }));
       }
@@ -219,6 +229,12 @@ const BloxxPricing = ({ onPriceChange, setCartItem }: BloxxPricingProps) => {
             },
             { name: "Pole Size", value: defaultSize || "Unknown" },
             { name: "Version", value: defaultVersion },
+            {
+              name: "Pole Material",
+              value:
+                prev.variations.find((v) => v.name === "Pole Material")
+                  ?.value || "Unknown",
+            },
           ],
         }));
       }
@@ -459,6 +475,19 @@ const BloxxPricing = ({ onPriceChange, setCartItem }: BloxxPricingProps) => {
     });
   };
 
+  // Handle Pole Material selection — writes the cart directly (GUARDRAILS 12)
+  const handleMaterialSelection = (material: string) => {
+    setSelectedMaterial(material);
+
+    setCartItem((prev) => {
+      const updatedVariations = [
+        ...(prev.variations || []).filter((v) => v.name !== "Pole Material"),
+        { name: "Pole Material", value: material },
+      ];
+      return { ...prev, variations: updatedVariations };
+    });
+  };
+
   return (
     <div className="mt-10">
       {/* Pole Shape Options */}
@@ -559,6 +588,12 @@ const BloxxPricing = ({ onPriceChange, setCartItem }: BloxxPricingProps) => {
           </div>
         )}
       </div>
+
+      {/* Pole Material Options — below Pole Size, above Current Price (Ticket 3) */}
+      <BloxxPricingPoleMaterials
+        selectedMaterial={selectedMaterial}
+        onSelectionChange={handleMaterialSelection}
+      />
     </div>
   );
 };
