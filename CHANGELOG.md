@@ -131,6 +131,12 @@ Doc-only changes (Testing Playbook updates, README edits, etc.) accumulate in `[
 - Git tags: `git tag -l` lists all releases
 - Commits per release: `git log v1.0.0..v1.1.0`
 
+## 2026-09-08 08:36 UTC — [CC] Claude Code (QA execution seat, CODY)
+
+- **Created:** `agent_docs/ACTIONS/DockBloxx_Ticket_3_TRM/QA/QA_REPORT.md` — independent QA verification of Ticket 3 on pinned SHA 1834f18 (branch `qa/product-option-1`); AC grading table, per-AC evidence, CONTRACT trace, regression results, findings, advisory recommendation
+- **Created:** `…/QA/readback_orders.py`, `…/QA/readback_orders_result.json`, `…/QA/browser_acs.cjs`, `…/QA/browser_acs_result.json`, `…/QA/screenshots/*.png` (6) — QA evidence artifacts
+- **Reason:** QA handoff Step 5 execution. Recommendation: READY FOR GATE Q (advisory; admin-display screenshots for #14893/#14894 still to be filed in `examples/`; verdict belongs to the QA Lead).
+
 ## 2026-09-08 05:15 UTC — [CC] Claude Code
 
 - **Updated:** `agent_docs/ACTIONS/DockBloxx_Ticket_3_TRM/README.md` — path convention `CURRENT_TASKS/` → `ACTIONS/` (2 refs)
@@ -156,3 +162,12 @@ Doc-only changes (Testing Playbook updates, README edits, etc.) accumulate in `[
 
 - **Created:** `agent_docs/ACTIONS/DockBloxx_Ticket_3_TRM/QA_HANDOFF_INDEX.md` — location map for the QA Lead (7 sections)
 - **Reason:** Director request at handoff.
+
+## 2026-09-08 — Ticket 3 TRM QA Closeout
+
+- Gate Q PASS on pinned SHA `1834f18c95ed589e1a7d07b44c50f3bef91fe070`
+- AC1–AC10 PASS; AC11 deferred to Gate D by design
+- Zero implementation defects found
+- Visual order evidence confirmed `Pole Material: Metal` and `Pole Material: Unknown`
+- Independent production build passed successfully
+- QA cleanup removed disposable execution debris and retained the durable certification package
