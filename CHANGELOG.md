@@ -130,3 +130,29 @@ Doc-only changes (Testing Playbook updates, README edits, etc.) accumulate in `[
 - Changelog: this file (newest at top)
 - Git tags: `git tag -l` lists all releases
 - Commits per release: `git log v1.0.0..v1.1.0`
+
+## 2026-09-08 05:15 UTC — [CC] Claude Code
+
+- **Updated:** `agent_docs/ACTIONS/DockBloxx_Ticket_3_TRM/README.md` — path convention `CURRENT_TASKS/` → `ACTIONS/` (2 refs)
+- **Reason:** Tony confirmed `agent_docs/ACTIONS/` is the current convention for task modules.
+
+## 2026-09-08 05:48 UTC — [CC] Claude Code
+
+- **Updated:** `agent_docs/ACTIONS/DockBloxx_Ticket_3_TRM/CLAUDE.md` — DoD §2.1 placement + control style; version row 1.1
+- **Updated:** `…/templates/RECON_FINDINGS.md` — headline 6 superseded (insertion after BloxxPricing L561)
+- **Updated:** `…/workflow/01_SOLUTION.md` — Step 3 mount point + button style; Step 7 wording
+- **Updated:** `…/templates/ACCEPTANCE_SPEC.md` — AC1 placement/control; AC5 product = whos-your-caddie
+- **Updated:** `…/templates/CONTRACT.md` — UI control line + lock-trail row (CONTRACT stays FINAL)
+- **Reason:** Director override 2026-09-08: Pole Material goes below Pole Size, above Current Price, as Pole-Size-style buttons.
+
+## 2026-09-08 06:42 UTC — [CC] Claude Code
+
+- **Created:** `agent_docs/CLEANUP_BACKLOG.md` — 10 Ticket 3 adjacent findings as follow-up candidates (archived May backlog stays in `agent_docs/OLD/`)
+- **Updated:** `agent_docs/ACTIONS/DockBloxx_Ticket_3_TRM/templates/EVIDENCE_LOG.md`, `templates/ACCEPTANCE_SPEC.md` — filled for Phase 2
+- **Created:** `agent_docs/ACTIONS/DockBloxx_Ticket_3_TRM/CLAIM_PACKAGE.md` — QA handoff
+- **Reason:** Ticket 3 Phase 1 closed (Steps 1–8), Phase 2 Steps 1–3 produced; stopped before TEST BUY.
+
+## 2026-09-08 07:49 UTC — [CC] Claude Code
+
+- **Created:** `agent_docs/ACTIONS/DockBloxx_Ticket_3_TRM/QA_HANDOFF_INDEX.md` — location map for the QA Lead (7 sections)
+- **Reason:** Director request at handoff.

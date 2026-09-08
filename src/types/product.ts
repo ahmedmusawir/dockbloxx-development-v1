@@ -97,3 +97,10 @@ export interface RelatedProduct {
   price_html: string; // The HTML for displaying product price (includes ranges or sale info)
   image: string; // The URL of the product's featured image
 }
+
+// Pole Material display labels from the ACF "Product Global" options page.
+// Frontend-owned option (like Pole Style): no price / SKU / variation impact.
+export interface PoleMaterials {
+  metal: string; // e.g. "Metal" — "" when the ACF value is unset
+  wood: string; // e.g. "Wood" — "" when the ACF value is unset
+}

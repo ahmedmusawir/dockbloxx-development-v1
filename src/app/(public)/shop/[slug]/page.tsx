@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import SingleProductContent from "./SingleProductContent";
 import {
   fetchAllProductSlugs,
+  fetchPoleMaterials,
   fetchPoleShapeStyles,
   fetchProductBySlug,
   fetchProductVariationsById,
@@ -112,10 +113,15 @@ const SingleProductPage = async ({
   const poleStyles =
     customCategory.type === "bloxx" ? await fetchPoleShapeStyles() : null;
 
-  // Augment the custom category JSON with pole styles
+  // Fetch pole materials (Metal / Wood labels) for Bloxx category — Ticket 3
+  const poleMaterials =
+    customCategory.type === "bloxx" ? await fetchPoleMaterials() : null;
+
+  // Augment the custom category JSON with pole styles and pole materials
   const augmentedCategory = {
     ...customCategory,
     ...(poleStyles && { poleStyles }),
+    ...(poleMaterials && { poleMaterials }),
   };
   // console.log("augmentedCategory [SingleProduct page]", augmentedCategory);
 

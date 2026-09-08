@@ -1,0 +1,17 @@
+{
+  "_comment": "TRM Factory infrastructure. plansDirectory keeps plans in-tree. PostToolUse hook mirrors approved ExitPlanMode plans into agent_docs/RESPONSES/. CAVEAT: ExitPlanMode hooks may run with cwd=~ — use $CLAUDE_PROJECT_DIR, never relative paths.",
+  "plansDirectory": "./.claude/plans",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "ExitPlanMode",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "mkdir -p \"$CLAUDE_PROJECT_DIR/agent_docs/RESPONSES\" && cp \"$CLAUDE_PROJECT_DIR\"/.claude/plans/*.md \"$CLAUDE_PROJECT_DIR/agent_docs/RESPONSES/\" 2>/dev/null || true"
+          }
+        ]
+      }
+    ]
+  }
+}

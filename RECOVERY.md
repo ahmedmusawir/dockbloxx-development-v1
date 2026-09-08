@@ -1,6 +1,5 @@
 # Recovery State
 
-Last action: Released **CHANGELOG `[1.1.0] - 2026-05-17`** capturing the full two-day end-to-end security cleanup arc. Expanded `agent_docs/CYBER_REPO_SECURITY_PLAYBOOK_v0.6.md` from v0.5 → v0.6 (file renamed). v0.6 restructure: unified Case Study #3 — Three-Repo Promotion (with #3a postcss + #3b brace-expansion sub-parts + afternoon's dev→mirror→Vercel arc); replaced v0.5's P9 with three-repo P9; added P10 (`npm ci` propagation), P11 (threat-landscape check), P12 (git divergence: investigate before pulling, never force); new top-level **Procedure: Three-Repo Security Patch Promotion via npm ci** runbook; new **Gotchas** section (G-NPM-1 EOVERRIDE, G-NPM-2 `rm -rf .next`, G-NPM-3 stray parent-level files). MANUAL_SMOKE_TEST.md (repo root) added to Companion Documents.
-Production deploy outcome: **0 vulnerabilities live in production**. Two-day arc: 25 vulns (3 critical, 11 high, 9 moderate) → 0. First fully-documented multi-repo security promotion in App Factory history. Zero regressions reported post-deploy.
-Pending: None.
-Next step: Tony's review + commit. Working tree dirty (no-commit rule). Modified: `package.json`, `package-lock.json`, `CHANGELOG.md`, `RECOVERY.md`, `session_2026-05-16.md`, `session_2026-05-17.md`, `agent_docs/CYBER_REPO_SECURITY_PLAYBOOK_v0.6.md` (renamed from `_v0.5.md`). Memories + plan file cross-references also updated.
+Last action: Ticket 3 TRM (Pole Material) — Phase 2 COMPLETE 2026-09-08. TEST BUYS #14893 (Square/4"/Metal → Pole Material: Metal) and #14894 (no selection → Pole Material: Unknown) pass on admin display and REST readback. Build clean (Director). Claim Package v2 HANDED OFF to QA Lead.
+Pending: QA verdict (Gate Q). All src + tests + docs uncommitted.
+Next step: act on QA findings (route per 02_QA_HANDOFF Step 5) → closure → Gate D after Track B on production. Ticket detail: agent_docs/ACTIONS/DockBloxx_Ticket_3_TRM/RECOVERY.md.

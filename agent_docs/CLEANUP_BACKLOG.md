@@ -1,55 +1,63 @@
 # Cleanup Backlog — Dockbloxx
 
 Non-urgent items tracked for future cleanup sessions. Not bugs, not security issues — technical debt with known fix paths.
+Earlier backlog (May 2026 security arc) is archived at `agent_docs/OLD/CLEANUP_BACKLOG.md`; items there remain open unless closed elsewhere.
 
-## Open Items
+## Open Items — from DockBloxx Ticket 3 (Pole Material) recon, 2026-09-08 (report-only, GUARDRAILS 13)
 
-### Dead `priceAfterDiscount` calc in `orderTransform.ts`
+### Pole Style handler is state-only — shopper's pick never reaches the cart
+- `src/components/shop/product-page/variations/BloxxPricing.tsx` `handlePoleStyleChange` (~L404): sets local state only; cart `Pole Style` comes from the shape-driven sync effect + `normalizePoleStyle`
+- Effect: `square_octagon` pick ships as `square`; order never records the real choice
+- Fix: mirror `handleMaterialSelection` (filter-then-append); decide key vs label for the order
+- Risk: low; needs a product decision on the stored value
 
-- Lines from original route.ts (now in orderTransform lib)
-- Computes `priceAfterDiscount`, only consumed by a `console.log`
-- Fix: remove computation; remove `console.log`
+### Duplicated init effects in BloxxPricing
+- Two `useEffect(…, [variations])` blocks (~L116–172, ~L175–238) do the same init; the second wins. A third effect (~L248) repeats the shape→style switch (4 copies total)
+- Effect: every new option must be seeded in both arrays (Ticket 3 Step 4 had to)
+- Fix: one init effect + `shapeToDefaultStyle()` helper; guard with `tests/components/shop/BloxxPricing.poleMaterial.test.tsx`
+- Risk: medium (touches init ordering) — do it with the suite green
+
+### `makeKey` stray brace — three of four copies differ from the fourth
+- `src/store/useCartStore.ts` L93, L115, L133 build `…)}}::…`; `addOrUpdateCartItem` L63 builds `…)}::…`
+- Effect: `addOrUpdateCartItem` and `setOrReplaceCartItemQuantity` compute different keys for the same item (self-consistent per function, so nothing breaks today)
+- Fix: one exported `makeKey` used by all five sites
 - Risk: very low
 
-### Next.js 15 `params` async warning
+### Cart key is order-sensitive; `handleShapeSelection` reorders `variations`
+- Key = `JSON.stringify(variations)`; shape handler filters then appends → `Pole Shape`/`Pole Size` move to the end
+- Effect: same selections reached in a different click order can be two lines; pre-deploy persisted carts (no `Pole Material`) will not merge with post-deploy adds
+- Fix: sort entries by name inside `makeKey` (bundle with the item above)
+- Risk: low
 
-- `src/app/(public)/dealer-coupon/[dealerSlug]/page.tsx` and other `[param]/page.tsx` files
-- Current: sync access pattern (`const x = params.x`)
-- Fix: await params before destructuring (`const { x } = await params`)
-- Warning today, error in future Next.js version
+### Leftover `console.log` in BloxxPricingPoleStyles
+- `src/components/shop/product-page/variations/BloxxPricingPoleStyles.tsx` L66 logs every style click
+- Fix: delete the line
+- Risk: none
 
-### Lint warnings (165 deferred)
+### `src/lib/test.ts` — bare sanity test under `src/`
+- Jest counts it as a suite
+- Fix: delete, or move to `tests/`
+- Risk: none
 
-- `no-unused-vars` (73), `no-explicit-any` (41), `no-img-element` (34), `exhaustive-deps` (17)
-- Currently downgraded to `warn` in `.eslintrc.json`
-- Plan a focused cleanup sprint post-high-season
+### Thank-you page option summary is commented out
+- `src/app/(public)/thankyou/ThankyouPageContent.tsx` L137–140
+- Effect: confirmation page shows no Shape/Size/Material summary
+- Fix: product decision — restore (generic renderer would show `Wood`) or delete the dead block
+- Risk: none
 
-### ApplyCoupon "Dealer Coupon Detected" banner dead code
+### Cart strips print values only — `Pole Style` shows as lowercase `square`
+- `CartSlide.tsx` L122–125, `cart-page/CartItems.tsx` L143–146, `CheckoutCartItems.tsx` L41–44
+- Effect: `Square · square · 2"`; Director accepted as-is for Ticket 3
+- Fix: bundle with the Pole Style item if a label is ever stored
+- Risk: none
 
-- `src/components/checkout/right-pane/ApplyCoupon.tsx`
-- sessionStorage-driven banner that no longer fires (Coach's attribution script removed)
-- Harmless (inert) but redundant
+### Round products: only size `Other`, and Add to Cart aborts via `alert()`
+- `src/components/shop/product-page/ProductDetails.tsx` L100–106
+- Effect: works as designed, but `alert()` is hostile on mobile and needs dialog handling in e2e (bit the Ticket 3 browser checks)
+- Fix: inline validation message next to the custom-size input
+- Risk: low
 
-### Stripe metadata string coercion
-
-- `src/app/api/create-payment-intent/route.ts`
-- `metadata: { orderId }` may pass numbers; Stripe prefers strings
-- Fix: `metadata: { orderId: String(orderId || "N/A") }`
-
-### Stripe input validation
-
-- Tracked in `SECURITY_FINDINGS.md` Finding #2
-- Not in this backlog because it's a security item, not pure cleanup
-
-### GHL attribution feature plumbing
-
-- Feature deprecated; plumbing left intact in code
-- Components still present:
-  - `src/app/api/place-order/route.ts` (meta_data writing via lib)
-  - `src/lib/attribution.ts` (likely)
-  - `src/lib/orderTransform.ts` (attribution block)
-  - Frontend sessionStorage reads
-- Production has no consumer (no Cyberize plugin, no GHL webhook)
-- Code writes empty meta to Woo orders on prod — harmless
-- Intentionally NOT tested in this session — feature is dead, test value ≈ feature value
-- May be removed in a future cleanup session, but no urgency
+### DoD example slug does not exist on staging
+- `giraffe-g20-pressure-washer-mount-only` absent from the 47 published staging products; TEST BUY routed to `whos-your-caddie` (3157)
+- Fix: confirm whether Giraffe G20 is production-only or renamed; correct the client-facing DoD wording
+- Risk: none (documentation)

@@ -1,4 +1,4 @@
-import { Product, RelatedProduct } from "@/types/product";
+import { PoleMaterials, Product, RelatedProduct } from "@/types/product";
 import { WC_REST_URL } from "@/constants/apiEndpoints";
 import { wooCommerceLimit as limit, sleep, RetryOptions } from "@/lib/utils";
 
@@ -1194,6 +1194,46 @@ export const fetchPoleShapeStyles = async (): Promise<
 };
 
 // --------------------------- FETCH POLE SHAPE STYLES FROM ACF ENDS ------------------------------------------------------------
+
+// --------------------------- FETCH POLE MATERIALS FROM ACF STARTS ------------------------------------------------------------
+
+/**
+ * Fetches the Pole Material display labels (Metal / Wood) from the ACF
+ * "Product Global" options page. Frontend-owned option like Pole Style —
+ * it never touches price, SKU, stock or WooCommerce variation matching.
+ *
+ * Fallback contract (Ticket 3 CONTRACT.md): a missing key or empty string
+ * is returned as "" so the UI omits that option. Any fetch error returns
+ * both as "" and never throws — production lacks these keys until the
+ * ACF values are entered there.
+ */
+export const fetchPoleMaterials = async (): Promise<PoleMaterials> => {
+  try {
+    const response = await fetch(ACF_REST_OPTIONS, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      next: { revalidate: 60 }, // Same cache window as fetchPoleShapeStyles
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch pole materials: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    return {
+      metal: data?.acf?.metal || "",
+      wood: data?.acf?.wood || "",
+    };
+  } catch (error) {
+    console.error("Error fetching pole materials:", error);
+    return { metal: "", wood: "" };
+  }
+};
+
+// --------------------------- FETCH POLE MATERIALS FROM ACF ENDS ------------------------------------------------------------
 
 // --------------------------- FEATURED PRODUCTS FROM WOOCOM PRODUCTS STARTS ------------------------------------------------------------
 
